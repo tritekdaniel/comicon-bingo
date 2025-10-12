@@ -1,13 +1,13 @@
 :root {
-  --accent: #3aac2b;
-  --bg: #0d170d;
+  --accent: #ffcc33;
+  --bg: #0d0d17;
   --text: #f2f2f2;
   --cell-size: min(18vw, 90px);
 }
 * { box-sizing: border-box; }
 body {
   font-family: "Poppins", system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1a2a1e, #0a140d);
+  background: radial-gradient(circle at top, #1a1a2a, #0a0a14);
   color: var(--text);
   margin: 0;
   padding: 1rem;
@@ -34,9 +34,10 @@ p.subtitle {
   gap: 8px;
   margin: 1rem auto;
   touch-action: manipulation;
+  transition: opacity 0.4s ease;
 }
 .cell {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.05);
   border-radius: 10px;
   border: 2px solid transparent;
   display: flex;
@@ -49,23 +50,30 @@ p.subtitle {
   transition: transform 0.1s ease, border 0.2s ease;
   user-select: none;
   overflow: hidden;
+  color: var(--text);
 }
 .cell img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: none;
+}
+.cell.clicked img {
+  display: block;
 }
 .cell.clicked {
   border-color: var(--accent);
   transform: scale(0.98);
+  color: transparent;
 }
 .cell.fixed {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border: 2px dashed rgba(255,255,255,0.2);
+  color: var(--accent);
 }
 button {
   background: var(--accent);
   border: none;
-  color: #022c04;
+  color: #000;
   font-weight: 600;
   border-radius: 8px;
   padding: 0.6rem 1rem;
@@ -74,20 +82,21 @@ button {
 }
 button.secondary {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.2);
   color: var(--text);
 }
 #status {
   margin-top: 0.6rem;
   font-size: 0.9rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: #fff9;
 }
+
 /* Modal */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0,0,0,0.6);
   display: none;
   align-items: center;
   justify-content: center;
@@ -95,7 +104,7 @@ button.secondary {
 }
 .modal.active { display: flex; }
 .modal-box {
-  background: #142215;
+  background: #141422;
   border-radius: 12px;
   padding: 1rem;
   width: min(90%, 400px);
@@ -107,22 +116,8 @@ button.secondary {
 .modal-box button {
   margin-top: 0.5rem;
 }
+
 @media (max-width: 480px) {
   :root { --cell-size: 16vw; }
   h1 { font-size: 1.4rem; }
-}
-/* Fade animation for board updates */
-#board {
-  transition: opacity 0.3s ease;
-}
-.fade-out {
-  opacity: 0;
-}
-.fade-in {
-  opacity: 1;
-}
-
-/* Emphasis for warning text */
-.modal-box p strong {
-  color: #ff5555;
 }
