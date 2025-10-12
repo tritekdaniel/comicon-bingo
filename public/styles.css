@@ -1,13 +1,17 @@
 :root {
   --accent: #16be3a;
-  --bg: #0e1f10;
+  --accent-glow: #30ff6d;
+  --bg: #0b170c;
+  --panel: #0f2211;
   --text: #f2f2f2;
   --cell-size: min(18vw, 90px);
 }
+
 * { box-sizing: border-box; }
+
 body {
   font-family: "Poppins", system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1a2a1b, #0a140c);
+  background: radial-gradient(circle at top, #152b18, var(--bg));
   color: var(--text);
   margin: 0;
   padding: 1rem;
@@ -15,18 +19,22 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
+  overflow-x: hidden;
 }
+
 header { text-align: center; }
 h1 {
   margin: 0.3em 0 0;
-  color: var(--accent);
+  color: var(--accent-glow);
   font-size: 1.8rem;
+  text-shadow: 0 0 6px var(--accent);
 }
 p.subtitle {
   font-size: 0.9rem;
   opacity: 0.85;
   margin-top: 0.3em;
 }
+
 #board {
   display: grid;
   grid-template-columns: repeat(5, var(--cell-size));
@@ -34,9 +42,17 @@ p.subtitle {
   gap: 8px;
   margin: 1rem auto;
   touch-action: manipulation;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
+#board.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .cell {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.05);
   border-radius: 10px;
   border: 2px solid transparent;
   display: flex;
@@ -48,7 +64,12 @@ p.subtitle {
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  transition: transform 0.15s ease, border 0.2s ease;
+  transition: transform 0.15s ease, border 0.25s ease, box-shadow 0.25s ease;
+  color: var(--text);
+}
+.cell:hover {
+  border-color: rgba(22,190,58,0.4);
+  box-shadow: 0 0 5px rgba(22,190,58,0.3);
 }
 .cell img {
   width: 100%;
@@ -57,8 +78,17 @@ p.subtitle {
   display: none;
 }
 .cell.clicked img { display: block; }
-.cell.clicked { border-color: var(--accent); transform: scale(0.97); color: transparent; }
-.cell.fixed { border: 2px dashed rgba(255, 255, 255, 0.2); color: var(--accent); }
+.cell.clicked {
+  border-color: var(--accent);
+  transform: scale(0.97);
+  color: transparent;
+  box-shadow: 0 0 10px rgba(22,190,58,0.4);
+}
+.cell.fixed {
+  border: 2px dashed rgba(255,255,255,0.3);
+  color: var(--accent-glow);
+}
+
 button {
   background: var(--accent);
   border: none;
@@ -68,24 +98,37 @@ button {
   padding: 0.6rem 1rem;
   margin: 0.3rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(22,190,58,0.4);
+}
+button:hover {
+  background: var(--accent-glow);
+  box-shadow: 0 0 10px rgba(22,190,58,0.6);
 }
 button.secondary {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.2);
   color: var(--text);
+  box-shadow: none;
 }
+button.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent-glow);
+  box-shadow: 0 0 8px rgba(22,190,58,0.4);
+}
+
 #status {
   margin-top: 0.6rem;
   font-size: 0.9rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255,255,255,0.7);
 }
 
 /* --- Modals --- */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0,0,0,0.7);
   display: none;
   align-items: center;
   justify-content: center;
@@ -98,15 +141,26 @@ button.secondary {
   opacity: 1;
 }
 .modal-box {
-  background: #0a1a0e;
+  background: var(--panel);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   width: min(90%, 400px);
   text-align: center;
-  animation: fadeInUp 0.3s ease;
+  animation: fadeInUp 0.35s ease;
+  border: 1px solid rgba(22,190,58,0.3);
+  box-shadow: 0 0 15px rgba(22,190,58,0.25);
 }
-.modal-box h3 { color: var(--accent); margin-top: 0; }
-.modal-buttons { display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem; }
+.modal-box h3 {
+  color: var(--accent-glow);
+  margin-top: 0;
+  text-shadow: 0 0 5px rgba(22,190,58,0.3);
+}
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -118,24 +172,14 @@ button.secondary {
   h1 { font-size: 1.4rem; }
 }
 
-/* Highlight effect for completed row/column/diagonal */
+/* Bingo completion flash */
 .cell.highlight {
   animation: bingoFlash 1s ease-in-out;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 10px var(--accent);
+  border-color: var(--accent-glow) !important;
+  box-shadow: 0 0 14px var(--accent-glow);
 }
-
 @keyframes bingoFlash {
-  0% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
-  50% {
-    transform: scale(1.1);
-    filter: brightness(1.5);
-  }
-  100% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.1); filter: brightness(1.6); }
+  100% { transform: scale(1); filter: brightness(1); }
 }
