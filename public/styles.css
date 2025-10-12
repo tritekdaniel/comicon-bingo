@@ -1,13 +1,13 @@
 :root {
   --accent: #16be3a;
-  --bg: #0e1f13;
+  --bg: #0e1f10;
   --text: #f2f2f2;
   --cell-size: min(18vw, 90px);
 }
 * { box-sizing: border-box; }
 body {
   font-family: "Poppins", system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1a1a2a, #0a0a14);
+  background: radial-gradient(circle at top, #1a2a1b, #0a140c);
   color: var(--text);
   margin: 0;
   padding: 1rem;
@@ -62,7 +62,7 @@ p.subtitle {
 button {
   background: var(--accent);
   border: none;
-  color: #000000;
+  color: #071f0e;
   font-weight: 600;
   border-radius: 8px;
   padding: 0.6rem 1rem;
@@ -98,7 +98,7 @@ button.secondary {
   opacity: 1;
 }
 .modal-box {
-  background: #0e2916;
+  background: #0a1a0e;
   border-radius: 12px;
   padding: 1rem;
   width: min(90%, 400px);
