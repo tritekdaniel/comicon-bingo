@@ -31,6 +31,7 @@ async function readDB() {
     return { users: {} };
   }
 }
+
 async function writeDB(db) {
   const tmp = DB_FILE + ".tmp";
   await fs.writeFile(tmp, JSON.stringify(db, null, 2));
@@ -45,20 +46,37 @@ function shuffle(a) {
   return a;
 }
 
-function makeBoard(images) {
-  const list = shuffle([...images]).slice(0, SIZE * SIZE - 1);
+async function makeBoard(images) {
+  // Exclude emlogo.* from random tiles
+  const available = images.filter((f) => !/^emlogo\./i.test(f));
+
+  const list = shuffle([...available]).slice(0, SIZE * SIZE - 1);
   const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
   let idx = 0;
+
+  // Check if emlogo exists
+  const emlogo = images.find((f) => /^emlogo\./i.test(f));
+  const hasEmLogo = !!emlogo;
+
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       if (r === CENTER.r && c === CENTER.c) {
-        // Center tile is clickable and shows emlogo.png when clicked
-        board[r][c] = {
-          text: "FREE",
-          image: `/images/emlogo.png`,
-          clicked: false,
-          fixed: false,
-        };
+        // Center "FREE" tile
+        if (hasEmLogo) {
+          board[r][c] = {
+            text: "FREE",
+            image: `/images/${emlogo}`,
+            clicked: false,
+            fixed: false,
+          };
+        } else {
+          // Fallback if emlogo missing
+          board[r][c] = {
+            text: "FREE",
+            clicked: false,
+            fixed: false,
+          };
+        }
       } else {
         const file = list[idx++];
         const label = file.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
@@ -73,6 +91,9 @@ function makeBoard(images) {
   return board;
 }
 
+// --- ROUTES ---
+
+// Get or create board
 app.get("/api/board", async (req, res) => {
   const token = req.headers["x-bingo-token"];
   if (!token) return res.status(400).json({ error: "Missing token" });
@@ -80,11 +101,17 @@ app.get("/api/board", async (req, res) => {
   const id = hashToken(token);
   const db = await readDB();
 
-  const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
-    /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
-  );
+  let images = [];
+  try {
+    images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
+      /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
+    );
+  } catch {
+    return res.status(500).json({ error: "Images folder not found" });
+  }
+
   if (images.length < 24)
-    return res.status(500).json({ error: "Need at least 24 images" });
+    return res.status(500).json({ error: "Need at least 24 images in /public/images" });
 
   const today = todayStr();
   db.users ??= {};
@@ -96,7 +123,7 @@ app.get("/api/board", async (req, res) => {
       lastGenerated: today,
       completed: false,
       preference: false,
-      board: makeBoard(images),
+      board: await makeBoard(images),
     };
     db.users[id] = user;
     await writeDB(db);
@@ -105,6 +132,7 @@ app.get("/api/board", async (req, res) => {
   res.json({ board: user.board, meta: user });
 });
 
+// Click a cell
 app.post("/api/click", async (req, res) => {
   const { row, col } = req.body;
   const token = req.headers["x-bingo-token"];
@@ -128,6 +156,7 @@ app.post("/api/click", async (req, res) => {
   res.json({ ok: true, completed: user.completed, board: user.board });
 });
 
+// Set daily preference
 app.post("/api/preference", async (req, res) => {
   const token = req.headers["x-bingo-token"];
   const { preference } = req.body;
@@ -141,6 +170,7 @@ app.post("/api/preference", async (req, res) => {
   res.json({ ok: true, preference: user.preference });
 });
 
+// Manually generate a new board
 app.post("/api/newboard", async (req, res) => {
   const token = req.headers["x-bingo-token"];
   const id = hashToken(token);
@@ -148,13 +178,19 @@ app.post("/api/newboard", async (req, res) => {
   const user = db.users[id];
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
-    /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
-  );
-  if (images.length < 24)
-    return res.status(500).json({ error: "Not enough images" });
+  let images = [];
+  try {
+    images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
+      /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
+    );
+  } catch {
+    return res.status(500).json({ error: "Images folder not found" });
+  }
 
-  user.board = makeBoard(images);
+  if (images.length < 24)
+    return res.status(500).json({ error: "Not enough images in /public/images" });
+
+  user.board = await makeBoard(images);
   user.completed = false;
   user.lastGenerated = todayStr();
   await writeDB(db);
@@ -162,6 +198,5 @@ app.post("/api/newboard", async (req, res) => {
   res.json({ ok: true, board: user.board });
 });
 
-app.listen(PORT, () =>
-  console.log(`✅ Bingo running at http://localhost:${PORT}`)
-);
+// Start server
+app.listen(PORT, () => console.log(`✅ Bingo running at http://localhost:${PORT}`));
