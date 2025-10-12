@@ -1,6 +1,6 @@
 :root {
-  --accent: #35e725;
-  --bg: #0d1710;
+  --accent: #16be3a;
+  --bg: #0e1f13;
   --text: #f2f2f2;
   --cell-size: min(18vw, 90px);
 }
@@ -58,7 +58,7 @@ p.subtitle {
 }
 .cell.clicked img { display: block; }
 .cell.clicked { border-color: var(--accent); transform: scale(0.97); color: transparent; }
-.cell.fixed { border: 2px dashed rgba(255,255,255,0.2); color: var(--accent); }
+.cell.fixed { border: 2px dashed rgba(255, 255, 255, 0.2); color: var(--accent); }
 button {
   background: var(--accent);
   border: none;
@@ -98,7 +98,7 @@ button.secondary {
   opacity: 1;
 }
 .modal-box {
-  background: #14221b;
+  background: #0e2916;
   border-radius: 12px;
   padding: 1rem;
   width: min(90%, 400px);
