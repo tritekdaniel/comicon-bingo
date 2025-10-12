@@ -23,20 +23,19 @@
   let completedCols = new Set();
   let completedDiags = new Set();
 
-  // --- Helper: Modal ---
+  // --- Modal helper ---
   function showModal(title, message, buttons) {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
 
-    // Hide default new board elements
+    // Hide default elements for new board modal
     newTimerText.style.display = "none";
     confirmNew.style.display = "none";
     cancelNew.style.display = "none";
 
-    // Remove any previous temp buttons
+    // Remove old temporary buttons
     modalBox.querySelectorAll(".tempButtons").forEach((b) => b.remove());
 
-    // Build button container
     const btnContainer = document.createElement("div");
     btnContainer.className = "tempButtons";
     btnContainer.style.display = "flex";
@@ -48,7 +47,7 @@
     buttons.forEach(({ label, handler, secondary }) => {
       const btn = document.createElement("button");
       btn.textContent = label;
-      btn.className = secondary ? "secondary" : "";
+      if (secondary) btn.classList.add("secondary");
       btn.addEventListener("click", () => {
         newModal.classList.remove("active");
         handler();
@@ -78,13 +77,9 @@
     return res.json();
   };
 
-  // --- Render board safely ---
+  // --- Render board ---
   function renderBoard(board) {
-    if (!board || !Array.isArray(board)) {
-      console.error("Invalid board data", board);
-      return;
-    }
-
+    if (!board || !Array.isArray(board)) return;
     currentBoard = board;
     boardEl.innerHTML = "";
 
@@ -102,7 +97,7 @@
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
 
-        // Only allow confirmation if not clicked or fixed
+        // Only confirm if not fixed/clicked
         if (!cell.fixed && !cell.clicked) {
           div.addEventListener("click", () => {
             pendingCell = { r, c };
@@ -120,7 +115,7 @@
 
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
-  // --- Detect Bingo lines ---
+  // --- Detect Bingo Lines ---
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
@@ -129,7 +124,7 @@
     for (let r = 0; r < size; r++) {
       if (board[r].every(isClicked) && !completedRows.has(r)) {
         completedRows.add(r);
-        newLines.push({ type: "row", index: r });
+        newLines.push("row");
       }
     }
 
@@ -137,7 +132,7 @@
     for (let c = 0; c < size; c++) {
       if (board.every((row) => isClicked(row[c])) && !completedCols.has(c)) {
         completedCols.add(c);
-        newLines.push({ type: "col", index: c });
+        newLines.push("col");
       }
     }
 
@@ -146,32 +141,17 @@
     const diag2 = Array.from({ length: size }, (_, i) => board[i][size - 1 - i]);
     if (diag1.every(isClicked) && !completedDiags.has("main")) {
       completedDiags.add("main");
-      newLines.push({ type: "diagMain" });
+      newLines.push("diagMain");
     }
     if (diag2.every(isClicked) && !completedDiags.has("anti")) {
       completedDiags.add("anti");
-      newLines.push({ type: "diagAnti" });
+      newLines.push("diagAnti");
     }
 
-    // Highlight
-    newLines.forEach(({ type, index }) => {
-      const flash = (r, c) => {
-        const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-        if (el) {
-          el.classList.add("highlight");
-          setTimeout(() => el.classList.remove("highlight"), 1000);
-        }
-      };
-      if (type === "row") for (let c = 0; c < size; c++) flash(index, c);
-      if (type === "col") for (let r = 0; r < size; r++) flash(r, index);
-      if (type === "diagMain") for (let i = 0; i < size; i++) flash(i, i);
-      if (type === "diagAnti") for (let i = 0; i < size; i++) flash(i, size - 1 - i);
-    });
-
-    return newLines.map((l) => l.type);
+    return newLines;
   }
 
-  // --- Confirm click handler ---
+  // --- Confirm click ---
   async function confirmClick() {
     if (!pendingCell) return;
     const { r, c } = pendingCell;
@@ -184,8 +164,8 @@
 
     if (!res.board) return;
     renderBoard(res.board);
-    const newLines = detectNewBingoLines(res.board);
 
+    const newLines = detectNewBingoLines(res.board);
     if (newLines.length > 0) {
       showModal("🎉 Bingo!", "You completed a row, column, or diagonal!", [
         { label: "OK", handler: () => {} },
@@ -211,12 +191,10 @@
         link.href = dataUrl;
         link.click();
       })
-      .catch(() =>
-        alert("Screenshot failed — ensure images are local and same-origin.")
-      );
+      .catch(() => alert("Screenshot failed — ensure images are local and same-origin."));
   }
 
-  // --- Preferences ---
+  // --- Preference ---
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", {
       method: "POST",
@@ -235,7 +213,7 @@
     sessionStorage.setItem("askedPref", "1");
   });
 
-  // --- New Board Modal ---
+  // --- New board modal ---
   document.getElementById("newBoard").addEventListener("click", () => {
     modalBox.querySelectorAll(".tempButtons").forEach((b) => b.remove());
     modalTitle.textContent = "Start a new board?";
@@ -287,7 +265,7 @@
 
   document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
-  // --- Initial Load ---
+  // --- Initial load ---
   const { board, meta } = await api("/api/board");
   completedRows.clear();
   completedCols.clear();
