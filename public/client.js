@@ -25,7 +25,6 @@
 
   let currentBoard = null;
   let pendingCell = null;
-
   let completedRows = new Set();
   let completedCols = new Set();
   let completedDiags = new Set();
@@ -60,14 +59,15 @@
         const div = document.createElement("div");
         div.className = "cell";
         if (cell.clicked) div.classList.add("clicked");
-        if (cell.fixed) div.classList.add("fixed");
         div.dataset.r = r;
         div.dataset.c = c;
         div.innerHTML =
           cell.clicked && cell.image
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
-        if (!cell.fixed && !cell.clicked) {
+
+        // all unclicked cells are clickable (including center)
+        if (!cell.clicked) {
           div.addEventListener("click", () => {
             pendingCell = { r, c };
             show(confirmModal);
@@ -78,7 +78,7 @@
     );
   }
 
-  // highlight & detect Bingo lines
+  // detect + highlight Bingo lines
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
@@ -108,38 +108,24 @@
       newLines.push({ type: "diagAnti" });
     }
 
-    // glow highlight for new lines
     newLines.forEach(({ type, index }) => {
-      if (type === "row") {
-        for (let c = 0; c < size; c++) {
-          const el = boardEl.querySelector(`.cell[data-r="${index}"][data-c="${c}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1500);
-          }
+      const size = board.length;
+      const cells = [];
+      if (type === "row")
+        for (let c = 0; c < size; c++) cells.push([index, c]);
+      else if (type === "col")
+        for (let r = 0; r < size; r++) cells.push([r, index]);
+      else if (type === "diagMain")
+        for (let i = 0; i < size; i++) cells.push([i, i]);
+      else if (type === "diagAnti")
+        for (let i = 0; i < size; i++) cells.push([i, size - 1 - i]);
+      cells.forEach(([r, c]) => {
+        const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+        if (el) {
+          el.classList.add("highlight");
+          setTimeout(() => el.classList.remove("highlight"), 1500);
         }
-      } else if (type === "col") {
-        for (let r = 0; r < size; r++) {
-          const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${index}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1500);
-          }
-        }
-      } else {
-        // diagonals
-        const coords =
-          type === "diagMain"
-            ? Array.from({ length: size }, (_, i) => [i, i])
-            : Array.from({ length: size }, (_, i) => [i, size - 1 - i]);
-        coords.forEach(([r, c]) => {
-          const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1500);
-          }
-        });
-      }
+      });
     });
 
     return newLines;
@@ -150,11 +136,13 @@
     if (!pendingCell) return;
     const { r, c } = pendingCell;
     pendingCell = null;
+
     const res = await api("/api/click", {
       method: "POST",
       body: JSON.stringify({ row: r, col: c }),
     });
     if (!res || !res.board) return;
+
     renderBoard(res.board);
 
     const newLines = detectNewBingoLines(res.board);
@@ -166,10 +154,9 @@
     pendingCell = null;
     hide(confirmModal);
   });
-
   bingoOk.addEventListener("click", () => hide(bingoModal));
-
   completeOk.addEventListener("click", () => hide(completeModal));
+
   completeScreenshot.addEventListener("click", () => {
     takeScreenshot();
     hide(completeModal);
@@ -189,6 +176,7 @@
       );
   }
 
+  // new board, prefs, reset, etc.
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", {
       method: "POST",
@@ -243,6 +231,7 @@
     completedDiags.clear();
     renderBoard(board);
   });
+
   document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
   const { board, meta } = await api("/api/board");
