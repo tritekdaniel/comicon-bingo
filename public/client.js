@@ -96,27 +96,48 @@
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
   function detectNewBingoLines(board) {
-    const size = board.length;
-    const newLines = [];
+  const size = board.length;
+  const newLines = [];
 
-    // check rows
-    for (let r = 0; r < size; r++) {
-      if (board[r].every(isClicked) && !completedRows.has(r)) {
-        completedRows.add(r);
-        newLines.push("row");
-      }
+  // check rows
+  for (let r = 0; r < size; r++) {
+    if (board[r].every(isClicked) && !completedRows.has(r)) {
+      completedRows.add(r);
+      newLines.push({ type: "row", index: r });
     }
-
-    // check columns
-    for (let c = 0; c < size; c++) {
-      if (board.every((row) => isClicked(row[c])) && !completedCols.has(c)) {
-        completedCols.add(c);
-        newLines.push("col");
-      }
-    }
-
-    return newLines;
   }
+
+  // check columns
+  for (let c = 0; c < size; c++) {
+    if (board.every((row) => isClicked(row[c])) && !completedCols.has(c)) {
+      completedCols.add(c);
+      newLines.push({ type: "col", index: c });
+    }
+  }
+
+  // ✨ highlight newly completed rows/columns
+  newLines.forEach(({ type, index }) => {
+    if (type === "row") {
+      for (let c = 0; c < size; c++) {
+        const el = boardEl.querySelector(`.cell[data-r="${index}"][data-c="${c}"]`);
+        if (el) {
+          el.classList.add("highlight");
+          setTimeout(() => el.classList.remove("highlight"), 1000);
+        }
+      }
+    } else if (type === "col") {
+      for (let r = 0; r < size; r++) {
+        const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${index}"]`);
+        if (el) {
+          el.classList.add("highlight");
+          setTimeout(() => el.classList.remove("highlight"), 1000);
+        }
+      }
+    }
+  });
+
+  return newLines.map((l) => l.type);
+}
 
   // --- Confirm marking a cell ---
   async function confirmClick() {

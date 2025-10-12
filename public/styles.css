@@ -117,3 +117,25 @@ button.secondary {
   :root { --cell-size: 16vw; }
   h1 { font-size: 1.4rem; }
 }
+
+/* Highlight effect for completed row/column */
+.cell.highlight {
+  animation: bingoFlash 1s ease-in-out;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+@keyframes bingoFlash {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.5);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
