@@ -15,25 +15,25 @@
   const yesPref = document.getElementById("yesPref");
   const noPref = document.getElementById("noPref");
 
-  let currentBoard = null;
   let pendingCell = null;
+  let currentBoard = null;
 
   // Track completed lines
   let completedRows = new Set();
   let completedCols = new Set();
   let completedDiags = new Set();
 
-  // --- Modal helper ---
+  // --- Modal helper (no fancy styles) ---
   function showModal(title, message, buttons) {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
 
-    // Hide default elements for new board modal
+    // Hide the timer buttons for new-board modal
     newTimerText.style.display = "none";
     confirmNew.style.display = "none";
     cancelNew.style.display = "none";
 
-    // Remove old temporary buttons
+    // Remove previous temp buttons
     modalBox.querySelectorAll(".tempButtons").forEach((b) => b.remove());
 
     const btnContainer = document.createElement("div");
@@ -77,9 +77,8 @@
     return res.json();
   };
 
-  // --- Render board ---
+  // --- Render board (simple) ---
   function renderBoard(board) {
-    if (!board || !Array.isArray(board)) return;
     currentBoard = board;
     boardEl.innerHTML = "";
 
@@ -97,7 +96,7 @@
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
 
-        // Only confirm if not fixed/clicked
+        // Skip confirm for fixed or clicked cells
         if (!cell.fixed && !cell.clicked) {
           div.addEventListener("click", () => {
             pendingCell = { r, c };
@@ -115,7 +114,7 @@
 
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
-  // --- Detect Bingo Lines ---
+  // --- Detect Bingo lines (no highlight) ---
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
@@ -191,10 +190,12 @@
         link.href = dataUrl;
         link.click();
       })
-      .catch(() => alert("Screenshot failed — ensure images are local and same-origin."));
+      .catch(() =>
+        alert("Screenshot failed — ensure images are local and same-origin.")
+      );
   }
 
-  // --- Preference ---
+  // --- Preferences ---
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", {
       method: "POST",
