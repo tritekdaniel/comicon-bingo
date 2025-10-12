@@ -118,7 +118,7 @@ button.secondary {
   h1 { font-size: 1.4rem; }
 }
 
-/* Highlight effect for completed row/column */
+/* Highlight effect for completed row/column/diagonal */
 .cell.highlight {
   animation: bingoFlash 1s ease-in-out;
   border-color: var(--accent) !important;
