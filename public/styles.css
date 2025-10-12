@@ -1,6 +1,6 @@
 :root {
-  --accent: #ffcc33;
-  --bg: #0d0d17;
+  --accent: #35e725;
+  --bg: #0d1710;
   --text: #f2f2f2;
   --cell-size: min(18vw, 90px);
 }
@@ -36,7 +36,7 @@ p.subtitle {
   touch-action: manipulation;
 }
 .cell {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   border: 2px solid transparent;
   display: flex;
@@ -62,7 +62,7 @@ p.subtitle {
 button {
   background: var(--accent);
   border: none;
-  color: #000;
+  color: #000000;
   font-weight: 600;
   border-radius: 8px;
   padding: 0.6rem 1rem;
@@ -71,21 +71,21 @@ button {
 }
 button.secondary {
   background: none;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text);
 }
 #status {
   margin-top: 0.6rem;
   font-size: 0.9rem;
   text-align: center;
-  color: #fff9;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* --- Modals --- */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: none;
   align-items: center;
   justify-content: center;
@@ -98,7 +98,7 @@ button.secondary {
   opacity: 1;
 }
 .modal-box {
-  background: #141422;
+  background: #14221b;
   border-radius: 12px;
   padding: 1rem;
   width: min(90%, 400px);
