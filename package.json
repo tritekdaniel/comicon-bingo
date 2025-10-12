@@ -1,0 +1,17 @@
+{
+  "name": "comicon-bingo",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mobile-friendly Comicon Bingo website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

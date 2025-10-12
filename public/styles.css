@@ -1,0 +1,128 @@
+:root {
+  --accent: #3aac2b;
+  --bg: #0d170d;
+  --text: #f2f2f2;
+  --cell-size: min(18vw, 90px);
+}
+* { box-sizing: border-box; }
+body {
+  font-family: "Poppins", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1a2a1e, #0a140d);
+  color: var(--text);
+  margin: 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+header { text-align: center; }
+h1 {
+  margin: 0.3em 0 0;
+  color: var(--accent);
+  font-size: 1.8rem;
+}
+p.subtitle {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  margin-top: 0.3em;
+}
+#board {
+  display: grid;
+  grid-template-columns: repeat(5, var(--cell-size));
+  grid-auto-rows: var(--cell-size);
+  gap: 8px;
+  margin: 1rem auto;
+  touch-action: manipulation;
+}
+.cell {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, border 0.2s ease;
+  user-select: none;
+  overflow: hidden;
+}
+.cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cell.clicked {
+  border-color: var(--accent);
+  transform: scale(0.98);
+}
+.cell.fixed {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+button {
+  background: var(--accent);
+  border: none;
+  color: #022c04;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  margin: 0.3rem;
+  cursor: pointer;
+}
+button.secondary {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+#status {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal.active { display: flex; }
+.modal-box {
+  background: #142215;
+  border-radius: 12px;
+  padding: 1rem;
+  width: min(90%, 400px);
+}
+.modal-box h3 {
+  margin-top: 0;
+  color: var(--accent);
+}
+.modal-box button {
+  margin-top: 0.5rem;
+}
+@media (max-width: 480px) {
+  :root { --cell-size: 16vw; }
+  h1 { font-size: 1.4rem; }
+}
+/* Fade animation for board updates */
+#board {
+  transition: opacity 0.3s ease;
+}
+.fade-out {
+  opacity: 0;
+}
+.fade-in {
+  opacity: 1;
+}
+
+/* Emphasis for warning text */
+.modal-box p strong {
+  color: #ff5555;
+}
