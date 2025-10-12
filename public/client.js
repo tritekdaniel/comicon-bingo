@@ -18,7 +18,7 @@
   // ✅ track completed lines
   let completedRows = new Set();
   let completedCols = new Set();
-  let completedDiags = new Set(); // new for diagonals
+  let completedDiags = new Set();
 
   // --- Modal helper (safe cleanup so no duplicate buttons) ---
   function showModal(title, message, buttons) {
@@ -106,15 +106,14 @@
     );
   };
 
-  // --- Helper: treat FREE as filled ---
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
-  // --- Detect new bingos & animate highlight (now includes diagonals) ---
+  // --- Detect new bingos & animate highlight ---
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
 
-    // check rows
+    // rows
     for (let r = 0; r < size; r++) {
       if (board[r].every(isClicked) && !completedRows.has(r)) {
         completedRows.add(r);
@@ -122,7 +121,7 @@
       }
     }
 
-    // check columns
+    // cols
     for (let c = 0; c < size; c++) {
       if (board.every((row) => isClicked(row[c])) && !completedCols.has(c)) {
         completedCols.add(c);
@@ -130,7 +129,7 @@
       }
     }
 
-    // check diagonals
+    // diags
     const diag1 = Array.from({ length: size }, (_, i) => board[i][i]);
     const diag2 = Array.from({ length: size }, (_, i) => board[i][size - 1 - i]);
 
@@ -143,39 +142,33 @@
       newLines.push({ type: "diagAnti" });
     }
 
-    // ✨ Highlight new lines
+    // Highlight
     newLines.forEach(({ type, index }) => {
       if (type === "row") {
         for (let c = 0; c < size; c++) {
           const el = boardEl.querySelector(`.cell[data-r="${index}"][data-c="${c}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1000);
-          }
+          el?.classList.add("highlight");
+          setTimeout(() => el?.classList.remove("highlight"), 1000);
         }
       } else if (type === "col") {
         for (let r = 0; r < size; r++) {
           const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${index}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1000);
-          }
+          el?.classList.add("highlight");
+          setTimeout(() => el?.classList.remove("highlight"), 1000);
         }
       } else if (type === "diagMain") {
         for (let i = 0; i < size; i++) {
           const el = boardEl.querySelector(`.cell[data-r="${i}"][data-c="${i}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1000);
-          }
+          el?.classList.add("highlight");
+          setTimeout(() => el?.classList.remove("highlight"), 1000);
         }
       } else if (type === "diagAnti") {
         for (let i = 0; i < size; i++) {
-          const el = boardEl.querySelector(`.cell[data-r="${i}"][data-c="${size - 1 - i}"]`);
-          if (el) {
-            el.classList.add("highlight");
-            setTimeout(() => el.classList.remove("highlight"), 1000);
-          }
+          const el = boardEl.querySelector(
+            `.cell[data-r="${i}"][data-c="${size - 1 - i}"]`
+          );
+          el?.classList.add("highlight");
+          setTimeout(() => el?.classList.remove("highlight"), 1000);
         }
       }
     });
@@ -195,8 +188,6 @@
     });
 
     renderBoard(res.board);
-
-    // check new bingo lines
     const newLines = detectNewBingoLines(res.board);
     if (newLines.length > 0) {
       showModal("🎉 Bingo!", "You completed a row, column, or diagonal!", [
@@ -204,9 +195,39 @@
       ]);
     }
 
+    // ✅ NEW: Entire board completion modal
     if (res.completed) {
       statusEl.textContent = "🎉 Bingo complete! Show your screen at the booth!";
+      showModal(
+        "🎉 Congratulations!",
+        "Board completed!",
+        [
+          { label: "OK", handler: () => {} },
+          {
+            label: "Screenshot Board",
+            handler: takeScreenshot,
+            secondary: false,
+          },
+        ]
+      );
     }
+  }
+
+  // --- Screenshot function ---
+  function takeScreenshot() {
+    import(
+      "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.esm.js"
+    )
+      .then(({ toPng }) => toPng(boardEl))
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = "bingo.png";
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch(() =>
+        alert("Screenshot failed — ensure images are local and same-origin.")
+      );
   }
 
   // --- Preference modal ---
@@ -229,7 +250,6 @@
 
   // --- New board modal logic ---
   document.getElementById("newBoard").addEventListener("click", () => {
-    // clean up any extra buttons first
     newModal.querySelectorAll(".tempBtn").forEach((b) => b.remove());
     newModal.querySelector("h3").textContent = "Start a new board?";
     newModal.querySelector("p").textContent =
@@ -278,22 +298,7 @@
     completedDiags.clear();
     renderBoard(board);
   });
-
-  document.getElementById("screenshot").addEventListener("click", () => {
-    import(
-      "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.esm.js"
-    )
-      .then(({ toPng }) => toPng(boardEl))
-      .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "bingo.png";
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch(() =>
-        alert("Screenshot failed — ensure images are local and same-origin.")
-      );
-  });
+  document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
   // --- Initial load ---
   const { board, meta } = await api("/api/board");
