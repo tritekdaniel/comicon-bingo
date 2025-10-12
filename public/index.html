@@ -9,20 +9,43 @@
   <body>
     <header>
       <h1>Comicon Bingo</h1>
-      <p class="subtitle">Spot them all at the convention!</p>
+      <p class="subtitle">Tap the squares as you spot them!</p>
     </header>
 
-    <div id="board"></div>
+    <main>
+      <div id="board"></div>
+      <div id="status"></div>
+      <div class="buttons">
+        <button id="reset">Reload Board</button>
+        <button id="newBoard">New Board</button>
+        <button id="screenshot">Save Screenshot</button>
+      </div>
+    </main>
 
-    <div id="controls">
-      <button id="newBoard">New Board</button>
-      <button id="reset" class="secondary">Reload</button>
-      <button id="screenshot" class="secondary">Screenshot</button>
+    <!-- ✅ Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-box">
+        <h3>Are you sure?</h3>
+        <p>Are you sure you want to select this square?</p>
+        <div class="modal-buttons">
+          <button id="confirmYes">OK</button>
+          <button id="confirmNo" class="secondary">Cancel</button>
+        </div>
+      </div>
     </div>
 
-    <div id="status"></div>
+    <!-- ✅ Bingo Modal -->
+    <div id="bingoModal" class="modal">
+      <div class="modal-box">
+        <h3>🎉 Bingo!</h3>
+        <p>You completed a row or column!</p>
+        <div class="modal-buttons">
+          <button id="bingoOk">OK</button>
+        </div>
+      </div>
+    </div>
 
-    <!-- Preference modal -->
+    <!-- Existing modals -->
     <div id="prefModal" class="modal">
       <div class="modal-box">
         <h3>Get a new board daily?</h3>
@@ -32,7 +55,6 @@
       </div>
     </div>
 
-    <!-- New board confirmation modal -->
     <div id="newModal" class="modal">
       <div class="modal-box">
         <h3>Start a new board?</h3>
