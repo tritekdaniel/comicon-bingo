@@ -2,6 +2,7 @@
   const boardEl = document.getElementById("board");
   const statusEl = document.getElementById("status");
 
+  // Modals
   const newModal = document.getElementById("newModal");
   const modalBox = newModal.querySelector(".modal-box");
   const modalTitle = newModal.querySelector("h3");
@@ -17,36 +18,37 @@
   let currentBoard = null;
   let pendingCell = null;
 
-  // Tracking sets for completed lines
+  // Track completed lines
   let completedRows = new Set();
   let completedCols = new Set();
   let completedDiags = new Set();
 
-  // --- Modal Helper (works with all modals) ---
+  // --- Helper: Modal ---
   function showModal(title, message, buttons) {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
 
-    // Hide default newboard elements
+    // Hide default new board elements
     newTimerText.style.display = "none";
     confirmNew.style.display = "none";
     cancelNew.style.display = "none";
 
     // Remove any previous temp buttons
-    modalBox.querySelectorAll(".tempBtnContainer").forEach((b) => b.remove());
+    modalBox.querySelectorAll(".tempButtons").forEach((b) => b.remove());
 
+    // Build button container
     const btnContainer = document.createElement("div");
-    btnContainer.className = "tempBtnContainer";
+    btnContainer.className = "tempButtons";
     btnContainer.style.display = "flex";
     btnContainer.style.justifyContent = "center";
     btnContainer.style.flexWrap = "wrap";
     btnContainer.style.gap = "10px";
-    btnContainer.style.marginTop = "0.8rem";
+    btnContainer.style.marginTop = "1rem";
 
     buttons.forEach(({ label, handler, secondary }) => {
       const btn = document.createElement("button");
       btn.textContent = label;
-      btn.className = secondary ? "secondary tempBtn" : "tempBtn";
+      btn.className = secondary ? "secondary" : "";
       btn.addEventListener("click", () => {
         newModal.classList.remove("active");
         handler();
@@ -76,8 +78,13 @@
     return res.json();
   };
 
-  // --- Render board ---
-  const renderBoard = (board) => {
+  // --- Render board safely ---
+  function renderBoard(board) {
+    if (!board || !Array.isArray(board)) {
+      console.error("Invalid board data", board);
+      return;
+    }
+
     currentBoard = board;
     boardEl.innerHTML = "";
 
@@ -95,7 +102,7 @@
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
 
-        // Skip confirmation for FREE center or clicked squares
+        // Only allow confirmation if not clicked or fixed
         if (!cell.fixed && !cell.clicked) {
           div.addEventListener("click", () => {
             pendingCell = { r, c };
@@ -109,7 +116,7 @@
         boardEl.appendChild(div);
       })
     );
-  };
+  }
 
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
@@ -118,7 +125,7 @@
     const size = board.length;
     const newLines = [];
 
-    // rows
+    // Rows
     for (let r = 0; r < size; r++) {
       if (board[r].every(isClicked) && !completedRows.has(r)) {
         completedRows.add(r);
@@ -126,7 +133,7 @@
       }
     }
 
-    // cols
+    // Columns
     for (let c = 0; c < size; c++) {
       if (board.every((row) => isClicked(row[c])) && !completedCols.has(c)) {
         completedCols.add(c);
@@ -134,10 +141,9 @@
       }
     }
 
-    // diagonals
+    // Diagonals
     const diag1 = Array.from({ length: size }, (_, i) => board[i][i]);
     const diag2 = Array.from({ length: size }, (_, i) => board[i][size - 1 - i]);
-
     if (diag1.every(isClicked) && !completedDiags.has("main")) {
       completedDiags.add("main");
       newLines.push({ type: "diagMain" });
@@ -149,29 +155,23 @@
 
     // Highlight
     newLines.forEach(({ type, index }) => {
-      const flash = (selector) => {
-        const el = boardEl.querySelector(selector);
+      const flash = (r, c) => {
+        const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
         if (el) {
           el.classList.add("highlight");
           setTimeout(() => el.classList.remove("highlight"), 1000);
         }
       };
-
-      if (type === "row") {
-        for (let c = 0; c < size; c++) flash(`.cell[data-r="${index}"][data-c="${c}"]`);
-      } else if (type === "col") {
-        for (let r = 0; r < size; r++) flash(`.cell[data-r="${r}"][data-c="${index}"]`);
-      } else if (type === "diagMain") {
-        for (let i = 0; i < size; i++) flash(`.cell[data-r="${i}"][data-c="${i}"]`);
-      } else if (type === "diagAnti") {
-        for (let i = 0; i < size; i++) flash(`.cell[data-r="${i}"][data-c="${size - 1 - i}"]`);
-      }
+      if (type === "row") for (let c = 0; c < size; c++) flash(index, c);
+      if (type === "col") for (let r = 0; r < size; r++) flash(r, index);
+      if (type === "diagMain") for (let i = 0; i < size; i++) flash(i, i);
+      if (type === "diagAnti") for (let i = 0; i < size; i++) flash(i, size - 1 - i);
     });
 
     return newLines.map((l) => l.type);
   }
 
-  // --- Confirm marking a square ---
+  // --- Confirm click handler ---
   async function confirmClick() {
     if (!pendingCell) return;
     const { r, c } = pendingCell;
@@ -182,6 +182,7 @@
       body: JSON.stringify({ row: r, col: c }),
     });
 
+    if (!res.board) return;
     renderBoard(res.board);
     const newLines = detectNewBingoLines(res.board);
 
@@ -215,7 +216,7 @@
       );
   }
 
-  // --- Preference ---
+  // --- Preferences ---
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", {
       method: "POST",
@@ -234,9 +235,9 @@
     sessionStorage.setItem("askedPref", "1");
   });
 
-  // --- New board modal ---
+  // --- New Board Modal ---
   document.getElementById("newBoard").addEventListener("click", () => {
-    modalBox.querySelectorAll(".tempBtnContainer").forEach((b) => b.remove());
+    modalBox.querySelectorAll(".tempButtons").forEach((b) => b.remove());
     modalTitle.textContent = "Start a new board?";
     modalMessage.textContent =
       "If you generate a new board now, you won’t receive a prize for the current one.";
