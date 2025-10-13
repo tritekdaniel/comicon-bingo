@@ -2,63 +2,47 @@
   const boardEl = document.getElementById("board");
   const statusEl = document.getElementById("status");
 
-  // === Modals ===
-  const confirmModal = document.getElementById("confirmModal");
-  const confirmTitle = document.getElementById("confirmTitle");
-  const confirmMsg = document.getElementById("confirmMsg");
-  const confirmOk = document.getElementById("confirmOk");
-  const confirmCancel = document.getElementById("confirmCancel");
-
-  const bingoModal = document.getElementById("bingoModal");
-  const bingoText = document.getElementById("bingoText");
-  const bingoOk = document.getElementById("bingoOk");
-
-  const completeModal = document.getElementById("completeModal");
-  const completeOk = document.getElementById("completeOk");
-  const completeScreenshot = document.getElementById("completeScreenshot");
-
+  // Modals
   const prefModal = document.getElementById("prefModal");
   const yesPref = document.getElementById("yesPref");
   const noPref = document.getElementById("noPref");
 
   const newModal = document.getElementById("newModal");
-  const newTimerText = document.getElementById("newTimerText");
   const confirmNew = document.getElementById("confirmNew");
   const cancelNew = document.getElementById("cancelNew");
+  const newTimerText = document.getElementById("newTimerText");
 
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmText = document.getElementById("confirmText");
+  const confirmOk = document.getElementById("confirmOk");
+  const confirmCancel = document.getElementById("confirmCancel");
+
+  const bingoModal = document.getElementById("bingoModal");
+  const bingoOk = document.getElementById("bingoOk");
+
+  const completeModal = document.getElementById("completeModal");
+  const completeOk = document.getElementById("completeOk");
+  const screenshotBtn = document.getElementById("screenshotBtn");
+
+  let pendingAction = null;
   let currentBoard = null;
-  let pendingCell = null;
-
   let completedRows = new Set();
-  let completedCols = new Set();
-  let completedDiags = new Set();
 
+  // API helper
   const api = async (path, opts = {}) => {
-    const token =
-      localStorage.getItem("bingo_token") ||
-      (() => {
-        const t = crypto.randomUUID();
-        localStorage.setItem("bingo_token", t);
-        return t;
-      })();
-
     const res = await fetch(path, {
-      headers: { "Content-Type": "application/json", "x-bingo-token": token },
       credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
       ...opts,
     });
     return res.json();
   };
 
-  const show = (el) => el.classList.add("active");
-  const hide = (el) => el.classList.remove("active");
-  const isClicked = (sq) => sq.clicked || sq.fixed;
-
-  // === Render board ===
-  function renderBoard(board) {
+  // Render board
+  const renderBoard = (board) => {
     currentBoard = board;
     boardEl.innerHTML = "";
-    board.forEach((row, r) =>
+    board.forEach((row, r) => {
       row.forEach((cell, c) => {
         const div = document.createElement("div");
         div.className = "cell";
@@ -66,223 +50,160 @@
         if (cell.fixed) div.classList.add("fixed");
         div.dataset.r = r;
         div.dataset.c = c;
-        div.innerHTML =
-          cell.clicked && cell.image
-            ? `<img src="${cell.image}" alt="${cell.text}">`
-            : cell.text;
 
-        // clickable always (including center) — client confirms mark/unmark
+        if (cell.clicked && cell.image) {
+          div.innerHTML = `<img src="${cell.image}" alt="${cell.text}">`;
+        } else {
+          div.textContent = cell.text;
+        }
+
         div.addEventListener("click", () => {
-          pendingCell = { r, c };
-          if (!cell.clicked) {
-            confirmTitle.textContent = "Mark this square?";
-            confirmMsg.textContent = "Are you sure you want to select this square?";
+          if (cell.fixed) return;
+          if (cell.clicked) {
+            confirmAction("Unmark this square?", () => clickCell(r, c));
           } else {
-            confirmTitle.textContent = "Unmark?";
-            confirmMsg.textContent = "Are you sure you want to unmark this square?";
+            confirmAction("Mark this square?", () => clickCell(r, c));
           }
-          show(confirmModal);
         });
 
         boardEl.appendChild(div);
-      })
-    );
-  }
-
-  // === Detect new bingos (new-lines only flash) ===
-  function detectNewBingoLines(board) {
-    const size = board.length;
-    const newLines = [];
-
-    const currentRows = new Set();
-    const currentCols = new Set();
-    const currentDiags = new Set();
-
-    for (let r = 0; r < size; r++) {
-      if (board[r].every(isClicked)) currentRows.add(r);
-    }
-    for (let c = 0; c < size; c++) {
-      if (board.every((row) => isClicked(row[c]))) currentCols.add(c);
-    }
-    const diag1 = Array.from({ length: size }, (_, i) => board[i][i]);
-    const diag2 = Array.from({ length: size }, (_, i) => board[i][size - 1 - i]);
-    if (diag1.every(isClicked)) currentDiags.add("main");
-    if (diag2.every(isClicked)) currentDiags.add("anti");
-
-    // detect newly completed lines
-    currentRows.forEach((r) => {
-      if (!completedRows.has(r)) newLines.push({ type: "row", index: r });
-    });
-    currentCols.forEach((c) => {
-      if (!completedCols.has(c)) newLines.push({ type: "col", index: c });
-    });
-    currentDiags.forEach((d) => {
-      if (!completedDiags.has(d)) newLines.push({ type: d });
-    });
-
-    // update sets to current state
-    completedRows = currentRows;
-    completedCols = currentCols;
-    completedDiags = currentDiags;
-
-    // flash only the newly completed lines
-    const flashLine = (coords) => {
-      coords.forEach(([r, c]) => {
-        const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-        if (el) {
-          el.classList.add("highlight");
-          setTimeout(() => el.classList.remove("highlight"), 1500);
-        }
       });
-    };
-
-    newLines.forEach((line) => {
-      if (line.type === "row")
-        flashLine(Array.from({ length: size }, (_, c) => [line.index, c]));
-      else if (line.type === "col")
-        flashLine(Array.from({ length: size }, (_, r) => [r, line.index]));
-      else if (line.type === "main")
-        flashLine(Array.from({ length: size }, (_, i) => [i, i]));
-      else if (line.type === "anti")
-        flashLine(Array.from({ length: size }, (_, i) => [i, size - 1 - i]));
     });
+  };
 
-    return newLines;
-  }
+  // Check for Bingo (rows, columns, diagonals)
+  const checkBingo = (board) => {
+    const size = 5;
+    const bingos = [];
 
-  // === Confirm click (toggle) ===
-  confirmOk.addEventListener("click", async () => {
-    hide(confirmModal);
-    if (!pendingCell) return;
-    const { r, c } = pendingCell;
-    pendingCell = null;
+    // Rows
+    for (let r = 0; r < size; r++) {
+      if (board[r].every((c) => c.clicked)) bingos.push(`r${r}`);
+    }
 
+    // Columns
+    for (let c = 0; c < size; c++) {
+      if (board.every((r) => r[c].clicked)) bingos.push(`c${c}`);
+    }
+
+    // Diagonals
+    if ([0, 1, 2, 3, 4].every((i) => board[i][i].clicked)) bingos.push("d1");
+    if ([0, 1, 2, 3, 4].every((i) => board[i][4 - i].clicked)) bingos.push("d2");
+
+    return bingos;
+  };
+
+  // Handle click on a cell
+  const clickCell = async (r, c) => {
     const res = await api("/api/click", {
       method: "POST",
       body: JSON.stringify({ row: r, col: c }),
     });
-    if (!res || !res.board) return;
 
     renderBoard(res.board);
 
-    const newLines = detectNewBingoLines(res.board);
-    if (newLines.length > 0) {
-      const types = newLines.map((l) => {
-        if (l.type === "row") return "a row";
-        if (l.type === "col") return "a column";
-        if (l.type === "main" || l.type === "anti") return "a diagonal";
-        return "a line";
-      });
-      const uniqueTypes = [...new Set(types)];
-      bingoText.textContent = `🎉 Bingo! You completed ${uniqueTypes.join(" and ")}!`;
-      show(bingoModal);
+    const newBingos = checkBingo(res.board).filter((b) => !completedRows.has(b));
+
+    if (newBingos.length > 0) {
+      newBingos.forEach((b) => completedRows.add(b));
+      bingoModal.classList.add("active");
     }
 
     if (res.completed) {
-      statusEl.textContent = "🎊 Board complete! Show your screen at the booth!";
-      show(completeModal);
+      completeModal.classList.add("active");
     }
-  });
+  };
 
-  confirmCancel.addEventListener("click", () => {
-    pendingCell = null;
-    hide(confirmModal);
-  });
+  // Confirm action modal
+  function confirmAction(message, onConfirm) {
+    confirmText.textContent = message;
+    confirmModal.classList.add("active");
 
-  // Bingo / complete modals
-  bingoOk.addEventListener("click", () => hide(bingoModal));
-  completeOk.addEventListener("click", () => hide(completeModal));
-  completeScreenshot.addEventListener("click", () => {
-    takeScreenshot();
-    hide(completeModal);
-  });
+    const cleanup = () => {
+      confirmModal.classList.remove("active");
+      confirmOk.removeEventListener("click", okHandler);
+      confirmCancel.removeEventListener("click", cancelHandler);
+    };
 
-async function takeScreenshot() {
-  const target = document.getElementById("board");
-  if (!target) {
-    alert("Bingo board not found!");
-    return;
+    const okHandler = () => {
+      cleanup();
+      onConfirm();
+    };
+    const cancelHandler = cleanup;
+
+    confirmOk.addEventListener("click", okHandler);
+    confirmCancel.addEventListener("click", cancelHandler);
   }
 
-  try {
-    // Try html-to-image first (works best on desktop)
-    let toPng;
-    try {
-      const htmlToImage = await import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js");
-      toPng = htmlToImage.toPng || htmlToImage.default?.toPng;
-    } catch {
-      console.warn("html-to-image failed to import; trying dom-to-image-more...");
+  // Screenshot function
+  function takeScreenshot() {
+    const boardEl = document.getElementById("board");
+    if (!boardEl) {
+      alert("Bingo board not found!");
+      return;
     }
 
-    // Fallback: dom-to-image-more (better on mobile)
-    if (!toPng) {
-      const domToImage = await import("https://cdn.jsdelivr.net/npm/dom-to-image-more@2.9.3/dist/dom-to-image-more.min.js");
-      toPng = domToImage.toPng || domToImage.default?.toPng;
-    }
-
-    if (!toPng) throw new Error("No screenshot renderer loaded");
-
-    // Prepare board for capture
     const scale = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 1 : 2;
-    target.style.background = "#0d0d17";
-    target.style.padding = "10px";
-
-    // Generate the PNG
-    const dataUrl = await toPng(target, {
+    const options = {
       pixelRatio: scale,
       backgroundColor: "#0d0d17",
       cacheBust: true,
       filter: (node) => !node.closest(".modal") && node.id !== "status",
-    });
+    };
 
-    if (!dataUrl) throw new Error("Empty image returned");
+    htmlToImage
+      .toPng(boardEl, options)
+      .then((dataUrl) => {
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isIOS) {
+          const newTab = window.open();
+          newTab.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
+          return;
+        }
 
-    // Handle mobile download limitations
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isIOS) {
-      // Open in a new tab (Safari can’t auto-download)
-      const newTab = window.open();
-      newTab.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
-      return;
-    }
-
-    // Trigger download (desktop + Android)
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = "bingo-board.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    console.log("✅ Screenshot saved successfully!");
-  } catch (err) {
-    console.error("❌ Screenshot failed:", err);
-    alert("Screenshot failed — your browser may block image capture.");
+        const link = document.createElement("a");
+        link.download = "bingo-board.png";
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error("Screenshot failed:", err);
+        alert("Screenshot failed — try again or use desktop mode.");
+      });
   }
-}
 
-  // Preferences
+  // Button handlers
+  bingoOk.addEventListener("click", () => bingoModal.classList.remove("active"));
+  completeOk.addEventListener("click", () => completeModal.classList.remove("active"));
+  screenshotBtn.addEventListener("click", takeScreenshot);
+
   yesPref.addEventListener("click", async () => {
-    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: true }) });
-    hide(prefModal);
+    await api("/api/preference", {
+      method: "POST",
+      body: JSON.stringify({ preference: true }),
+    });
+    prefModal.classList.remove("active");
     sessionStorage.setItem("askedPref", "1");
   });
   noPref.addEventListener("click", async () => {
-    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: false }) });
-    hide(prefModal);
+    await api("/api/preference", {
+      method: "POST",
+      body: JSON.stringify({ preference: false }),
+    });
+    prefModal.classList.remove("active");
     sessionStorage.setItem("askedPref", "1");
   });
 
-  // New board flow
   document.getElementById("newBoard").addEventListener("click", () => {
-    newTimerText.textContent = "You can confirm in 3...";
-    show(newModal);
+    newModal.classList.add("active");
     confirmNew.disabled = true;
     let countdown = 3;
-    const t = setInterval(() => {
+    newTimerText.textContent = `You can confirm in ${countdown}...`;
+
+    const interval = setInterval(() => {
       countdown--;
       if (countdown <= 0) {
-        clearInterval(t);
+        clearInterval(interval);
         confirmNew.disabled = false;
         newTimerText.textContent = "You may now confirm.";
       } else {
@@ -290,34 +211,27 @@ async function takeScreenshot() {
       }
     }, 1000);
   });
-  cancelNew.addEventListener("click", () => hide(newModal));
+
+  cancelNew.addEventListener("click", () => newModal.classList.remove("active"));
+
   confirmNew.addEventListener("click", async () => {
-    hide(newModal);
     const res = await api("/api/newboard", { method: "POST" });
-    if (res && res.ok) {
-      completedRows.clear();
-      completedCols.clear();
-      completedDiags.clear();
+    if (res.ok) {
       renderBoard(res.board);
-      statusEl.textContent = "New board generated.";
+      statusEl.textContent = "New board generated. Prize eligibility reset.";
     }
+    newModal.classList.remove("active");
   });
 
-  // Buttons
-  document.getElementById("reset").addEventListener("click", async () => {
-    const { board } = await api("/api/board");
-    completedRows.clear();
-    completedCols.clear();
-    completedDiags.clear();
+  document.getElementById("reset").addEventListener("click", loadBoard);
+
+  async function loadBoard() {
+    const { board, meta } = await api("/api/board");
     renderBoard(board);
-  });
-  document.getElementById("screenshot").addEventListener("click", takeScreenshot);
+    if (meta && !sessionStorage.getItem("askedPref")) {
+      prefModal.classList.add("active");
+    }
+  }
 
-  // Initial load
-  const { board, meta } = await api("/api/board");
-  completedRows.clear();
-  completedCols.clear();
-  completedDiags.clear();
-  renderBoard(board);
-  if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
+  await loadBoard();
 })();
