@@ -1,4 +1,4 @@
-// server.js - mobile-optimized Comicon Bingo server
+// server.js - mobile-optimized Comicon Bingo server (toggle clicks, emlogo excluded)
 import express from "express";
 import { promises as fs } from "fs";
 import path from "path";
@@ -49,7 +49,6 @@ function shuffle(a) {
 async function makeBoard(images) {
   // Exclude emlogo.* from random tiles
   const available = images.filter((f) => !/^emlogo\./i.test(f));
-
   const list = shuffle([...available]).slice(0, SIZE * SIZE - 1);
   const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
   let idx = 0;
@@ -61,16 +60,15 @@ async function makeBoard(images) {
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       if (r === CENTER.r && c === CENTER.c) {
-        // Center "FREE" tile
+        // Center "FREE" tile: clickable, shows emlogo if available
         if (hasEmLogo) {
           board[r][c] = {
             text: "FREE",
-            image: `/images/${emlogo}`,
+            image: `/images/${encodeURIComponent(emlogo)}`,
             clicked: false,
             fixed: false,
           };
         } else {
-          // Fallback if emlogo missing
           board[r][c] = {
             text: "FREE",
             clicked: false,
@@ -132,7 +130,7 @@ app.get("/api/board", async (req, res) => {
   res.json({ board: user.board, meta: user });
 });
 
-// Click a cell
+// Toggle click on a cell
 app.post("/api/click", async (req, res) => {
   const { row, col } = req.body;
   const token = req.headers["x-bingo-token"];
@@ -143,14 +141,16 @@ app.post("/api/click", async (req, res) => {
   const user = db.users[id];
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  const cell = user.board[row][col];
-  if (cell.clicked) {
-    return res.json({ ok: true, completed: user.completed, board: user.board });
-  }
+  if (row < 0 || col < 0 || row >= SIZE || col >= SIZE)
+    return res.status(400).json({ error: "Invalid cell" });
 
-  cell.clicked = true;
+  const cell = user.board[row][col];
+  // Toggle clicked state
+  cell.clicked = !cell.clicked;
+
+  // Recompute completed
   const allClicked = user.board.flat().every((sq) => sq.clicked);
-  if (allClicked) user.completed = true;
+  user.completed = allClicked;
 
   await writeDB(db);
   res.json({ ok: true, completed: user.completed, board: user.board });
@@ -160,6 +160,8 @@ app.post("/api/click", async (req, res) => {
 app.post("/api/preference", async (req, res) => {
   const token = req.headers["x-bingo-token"];
   const { preference } = req.body;
+  if (!token) return res.status(400).json({ error: "Missing token" });
+
   const id = hashToken(token);
   const db = await readDB();
   const user = db.users[id];
@@ -170,9 +172,11 @@ app.post("/api/preference", async (req, res) => {
   res.json({ ok: true, preference: user.preference });
 });
 
-// Manually generate a new board
+// Manually generate a new board (user-initiated reset)
 app.post("/api/newboard", async (req, res) => {
   const token = req.headers["x-bingo-token"];
+  if (!token) return res.status(400).json({ error: "Missing token" });
+
   const id = hashToken(token);
   const db = await readDB();
   const user = db.users[id];
