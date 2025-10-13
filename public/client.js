@@ -87,7 +87,7 @@
     );
   }
 
-  // === Detect Bingos (fixed) ===
+  // === Detect Bingos (fixed flash) ===
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
@@ -112,7 +112,7 @@
     if (diag1.every(isClicked)) currentDiags.add("main");
     if (diag2.every(isClicked)) currentDiags.add("anti");
 
-    // Detect new lines
+    // Detect *new* lines only
     currentRows.forEach((r) => {
       if (!completedRows.has(r)) newLines.push({ type: "row", index: r });
     });
@@ -123,12 +123,12 @@
       if (!completedDiags.has(d)) newLines.push({ type: d });
     });
 
-    // Update sets to current state
+    // Update sets to reflect current state
     completedRows = currentRows;
     completedCols = currentCols;
     completedDiags = currentDiags;
 
-    // Flash all currently complete lines every time
+    // Flash *only new lines*
     const flashLine = (coords) => {
       coords.forEach(([r, c]) => {
         const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
@@ -139,18 +139,16 @@
       });
     };
 
-    currentRows.forEach((r) => {
-      flashLine(Array.from({ length: size }, (_, c) => [r, c]));
+    newLines.forEach((line) => {
+      if (line.type === "row")
+        flashLine(Array.from({ length: size }, (_, c) => [line.index, c]));
+      else if (line.type === "col")
+        flashLine(Array.from({ length: size }, (_, r) => [r, line.index]));
+      else if (line.type === "main")
+        flashLine(Array.from({ length: size }, (_, i) => [i, i]));
+      else if (line.type === "anti")
+        flashLine(Array.from({ length: size }, (_, i) => [i, size - 1 - i]));
     });
-    currentCols.forEach((c) => {
-      flashLine(Array.from({ length: size }, (_, r) => [r, c]));
-    });
-    if (currentDiags.has("main")) {
-      flashLine(Array.from({ length: size }, (_, i) => [i, i]));
-    }
-    if (currentDiags.has("anti")) {
-      flashLine(Array.from({ length: size }, (_, i) => [i, size - 1 - i]));
-    }
 
     return newLines;
   }
