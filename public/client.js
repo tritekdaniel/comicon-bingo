@@ -197,87 +197,20 @@
     hide(completeModal);
   });
 
-  async function takeScreenshot() {
-  try {
-    const board = document.getElementById("board");
-    if (!board) return alert("No board found.");
-
-    // ensure all images use absolute URLs
-    board.querySelectorAll("img").forEach((img) => {
-      if (img.src.startsWith("/")) {
-        img.src = location.origin + img.src;
-      }
-    });
-
-    // wait until all board images have loaded
-    const imgs = Array.from(board.querySelectorAll("img"));
-    await Promise.all(
-      imgs.map(
-        (img) =>
-          new Promise((resolve) => {
-            if (img.complete) resolve();
-            else {
-              img.onload = resolve;
-              img.onerror = resolve;
-            }
-          })
-      )
-    );
-
-    // render the board to a canvas
-    const rect = board.getBoundingClientRect();
-    const canvas = document.createElement("canvas");
-    canvas.width = rect.width * 2;   // high-res
-    canvas.height = rect.height * 2;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(2, 2);
-    ctx.fillStyle = "#0d0d17";
-    ctx.fillRect(0, 0, rect.width, rect.height);
-
-    // draw the board contents
-    const clone = board.cloneNode(true);
-    // hide modals, etc.
-    clone.querySelectorAll(".modal").forEach((m) => m.remove());
-    document.body.appendChild(clone);
-    const { toBlob } = await import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm");
-    const blob = await toBlob(clone, {
-      backgroundColor: "#0d0d17",
-      pixelRatio: 2,
-      filter: (node) =>
-        node instanceof Element &&
-        !node.closest(".modal") &&
-        node.id !== "status",
-    });
-    clone.remove();
-
-    if (!blob) throw new Error("Failed to capture board.");
-
-    const dataUrl = URL.createObjectURL(blob);
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      const tab = window.open();
-      if (!tab) return alert("Please allow pop-ups to view screenshot.");
-      tab.document.write(`
-        <title>Your Bingo Board</title>
-        <style>
-          body{margin:0;background:#0d0d17;display:flex;align-items:center;justify-content:center;height:100vh}
-          img{max-width:95%;height:auto;border-radius:10px;box-shadow:0 0 20px #000}
-        </style>
-        <img src="${dataUrl}" alt="Bingo Board">
-      `);
-    } else {
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "bingo-board.png";
-      link.click();
-      URL.revokeObjectURL(dataUrl);
-    }
-  } catch (err) {
-    console.error("Screenshot failed:", err);
-    alert("Screenshot failed — try again after images load.");
-  }
-}
+  const takeScreenshot = () => {
+    import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.esm.js")
+      .then(({ toPng }) => toPng(boardEl))
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = "bingo.png";
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((e) => {
+        console.error("screenshot error", e);
+        alert("Screenshot failed — ensure images are local and same-origin.");
+      });
+  };
 
   // Preferences
   yesPref.addEventListener("click", async () => {

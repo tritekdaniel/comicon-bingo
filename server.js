@@ -203,14 +203,4 @@ app.post("/api/newboard", async (req, res) => {
   return res.json({ ok: true, board: user.board });
 });
 
-app.get("/images/:file", async (req, res) => {
-  try {
-    const file = path.join(IMAGES_DIR, req.params.file);
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.sendFile(file);
-  } catch {
-    res.status(404).send("Image not found");
-  }
-});
-
 app.listen(PORT, () => console.log(`✅ Bingo running at http://localhost:${PORT}`));
