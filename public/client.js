@@ -198,7 +198,7 @@
   });
 
   const takeScreenshot = () => {
-    import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.esm.js")
+    import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
       .then(({ toPng }) => toPng(boardEl))
       .then((dataUrl) => {
         const link = document.createElement("a");
