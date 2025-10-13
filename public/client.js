@@ -198,16 +198,34 @@
   });
 
   function takeScreenshot() {
-    import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
-      .then(({ toPng }) => toPng(boardEl))
-      .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "bingo.png";
-        link.href = dataUrl;
-        link.click();
+  import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
+    .then(({ toPng }) =>
+      toPng(boardEl, {
+        pixelRatio: 2, // sharper image
+        backgroundColor: "#0d0d17", // solid background for consistent output
+        style: {
+          padding: "10px", // ensures no clipping around edges
+          margin: "0",
+        },
+        filter: (node) => {
+          // exclude modals and buttons from screenshot
+          return !node.closest(".modal") && node.id !== "status";
+        },
       })
-      .catch(() => alert("Screenshot failed — ensure images are local and same-origin."));
-  }
+    )
+    .then((dataUrl) => {
+      const img = new Image();
+      img.src = dataUrl;
+      const link = document.createElement("a");
+      link.download = "bingo-board.png";
+      link.href = dataUrl;
+      link.click();
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Screenshot failed — ensure images are local and same-origin.");
+    });
+}
 
   // Preferences
   yesPref.addEventListener("click", async () => {
