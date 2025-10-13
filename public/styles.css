@@ -1,13 +1,13 @@
 :root{
-  --accent:#ffcc33;
-  --bg:#0d0d17;
+  --accent:#18b918;
+  --bg:#0d170f;
   --text:#f2f2f2;
   --cell-size:min(18vw,90px);
 }
 *{box-sizing:border-box}
 body{
   font-family:"Poppins",system-ui,sans-serif;
-  background:radial-gradient(circle at top,#1a1a2a,#0a0a14);
+  background:radial-gradient(circle at top,#1a2a1e,#0a140a);
   color:var(--text);
   margin:0;
   padding:1rem;
