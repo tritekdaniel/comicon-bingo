@@ -1,29 +1,56 @@
-// server.js - Comicon Bingo (ESM)
+// server.js – Comicon Bingo (Turso + local fallback)
 import express from "express";
 import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
+import cookieParser from "cookie-parser";
+import { createClient } from "@libsql/client";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-const DB_FILE = process.env.RENDER_DISK_PATH
-  ? path.join(process.env.RENDER_DISK_PATH, "db.json")
-  : path.join(__dirname, "db.json");
-const IMAGES_DIR = path.join(__dirname, "public", "images");
 const PORT = process.env.PORT || 3000;
 const SALT = process.env.BINGO_SALT || "super-secret-salt";
 const SIZE = 5;
 const CENTER = { r: 2, c: 2 };
 
-const todayStr = () => new Date().toLocaleDateString("en-CA");
-const hashToken = (token) =>
-  crypto.createHash("sha256").update(token + SALT).digest("hex");
+// Local fallback DB file
+const DB_FILE = process.env.RENDER_DISK_PATH
+  ? path.join(process.env.RENDER_DISK_PATH, "db.json")
+  : path.join(__dirname, "db.json");
 
-async function readDB() {
+// Turso setup (if env vars present)
+let turso = null;
+if (process.env.TURSO_URL && process.env.TURSO_AUTH_TOKEN) {
+  try {
+    turso = createClient({
+      url: process.env.TURSO_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+    console.log("✅ Connected to Turso database");
+    await turso.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        data TEXT
+      )
+    `);
+  } catch (err) {
+    console.error("⚠️ Turso init failed — using local JSON DB:", err.message);
+    turso = null;
+  }
+}
+
+const IMAGES_DIR = path.join(__dirname, "public", "images");
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+const hashId = (ipOrCookie) =>
+  crypto.createHash("sha256").update(ipOrCookie + SALT).digest("hex");
+
+// --- Helpers ---
+async function readLocalDB() {
   try {
     const raw = await fs.readFile(DB_FILE, "utf8");
     return JSON.parse(raw);
@@ -31,12 +58,41 @@ async function readDB() {
     return { users: {} };
   }
 }
-async function writeDB(db) {
+
+async function writeLocalDB(db) {
   const tmp = DB_FILE + ".tmp";
   await fs.writeFile(tmp, JSON.stringify(db, null, 2));
   await fs.rename(tmp, DB_FILE);
 }
 
+// --- Turso user helpers ---
+async function readUser(id) {
+  if (!turso) {
+    const db = await readLocalDB();
+    return db.users[id] || null;
+  }
+  const res = await turso.execute({
+    sql: "SELECT data FROM users WHERE id = ?",
+    args: [id],
+  });
+  if (res.rows.length === 0) return null;
+  return JSON.parse(res.rows[0].data);
+}
+
+async function writeUser(id, user) {
+  if (!turso) {
+    const db = await readLocalDB();
+    db.users[id] = user;
+    await writeLocalDB(db);
+    return;
+  }
+  await turso.execute({
+    sql: "INSERT OR REPLACE INTO users (id, data) VALUES (?, ?)",
+    args: [id, JSON.stringify(user)],
+  });
+}
+
+// --- Board helpers ---
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -45,35 +101,22 @@ function shuffle(a) {
   return a;
 }
 
-async function makeBoard(images) {
-  // exclude emlogo.* from random pool
-  const available = images.filter((f) => !/^emlogo\./i.test(f));
-  const list = shuffle([...available]).slice(0, SIZE * SIZE - 1);
+function makeBoard(images) {
+  const emLogo = images.find((f) => /^emlogo\.(png|jpg|jpeg|webp|gif)$/i.test(f));
+  const otherImages = images.filter((f) => f !== emLogo);
+  const list = shuffle([...otherImages]).slice(0, SIZE * SIZE - 1);
   const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+
   let idx = 0;
-
-  // find emlogo (any ext)
-  const emlogo = images.find((f) => /^emlogo\./i.test(f));
-  const hasEmLogo = !!emlogo;
-
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       if (r === CENTER.r && c === CENTER.c) {
-        // center: shows emlogo if available, starts unclicked and not fixed (clickable)
-        if (hasEmLogo) {
-          board[r][c] = {
-            text: "FREE",
-            image: `/images/${encodeURIComponent(emlogo)}`,
-            clicked: false,
-            fixed: false,
-          };
-        } else {
-          board[r][c] = {
-            text: "FREE",
-            clicked: false,
-            fixed: false,
-          };
-        }
+        board[r][c] = {
+          text: "FREE",
+          image: emLogo ? `/images/${encodeURIComponent(emLogo)}` : null,
+          clicked: true,
+          fixed: true,
+        };
       } else {
         const file = list[idx++];
         const label = file.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
@@ -85,41 +128,30 @@ async function makeBoard(images) {
       }
     }
   }
-
   return board;
 }
 
-// Helper to get token from header
-function getToken(req) {
-  return req.headers["x-bingo-token"] || null;
-}
+const getUserId = (req, res) => {
+  let uid = req.cookies?.bingoId;
+  if (!uid) {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
+    uid = hashId(ip);
+    res.cookie("bingoId", uid, { maxAge: 365 * 24 * 60 * 60 * 1000 });
+  }
+  return uid;
+};
 
 // --- Routes ---
-
-// GET board (create user if missing)
 app.get("/api/board", async (req, res) => {
-  const token = getToken(req);
-  if (!token) return res.status(400).json({ error: "Missing token header x-bingo-token" });
-
-  const id = hashToken(token);
-  const db = await readDB();
-
-  let images = [];
-  try {
-    images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
-      /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
-    );
-  } catch (e) {
-    return res.status(500).json({ error: "Images folder not found" });
-  }
-
+  const id = getUserId(req, res);
+  const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
+    /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
+  );
   if (images.length < 24)
     return res.status(500).json({ error: "Need at least 24 images in /public/images" });
 
-  db.users ??= {};
-  let user = db.users[id];
-
   const today = todayStr();
+  let user = await readUser(id);
 
   if (!user) {
     user = {
@@ -127,80 +159,65 @@ app.get("/api/board", async (req, res) => {
       lastGenerated: today,
       completed: false,
       preference: false,
-      board: await makeBoard(images),
+      board: makeBoard(images),
     };
-    db.users[id] = user;
-    await writeDB(db);
+    await writeUser(id, user);
+  } else if (user.preference && user.completed && user.lastGenerated !== today) {
+    user.board = makeBoard(images);
+    user.completed = false;
+    user.lastGenerated = today;
+    await writeUser(id, user);
   }
 
-  return res.json({ board: user.board, meta: user });
+  res.json({ board: user.board, meta: user });
 });
 
-// POST click => toggle clicked
 app.post("/api/click", async (req, res) => {
   const { row, col } = req.body;
-  const token = getToken(req);
-  if (!token) return res.status(400).json({ error: "Missing token header x-bingo-token" });
-
-  const id = hashToken(token);
-  const db = await readDB();
-  const user = db.users[id];
+  const id = getUserId(req, res);
+  let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  if (row < 0 || col < 0 || row >= SIZE || col >= SIZE) return res.status(400).json({ error: "Invalid cell" });
+  const cell = user.board[row]?.[col];
+  if (!cell || cell.fixed) return res.json({ ok: true, board: user.board });
 
-  const cell = user.board[row][col];
-  // toggle (if fixed true toggling allowed? center not fixed in our setup)
   cell.clicked = !cell.clicked;
 
-  // recompute overall completed
-  user.completed = user.board.flat().every((sq) => sq.clicked);
+  const allClicked = user.board.flat().every((sq) => sq.clicked);
+  if (allClicked) user.completed = true;
 
-  await writeDB(db);
-  return res.json({ ok: true, completed: user.completed, board: user.board });
+  await writeUser(id, user);
+  res.json({ ok: true, completed: user.completed, board: user.board });
 });
 
 app.post("/api/preference", async (req, res) => {
-  const token = getToken(req);
-  if (!token) return res.status(400).json({ error: "Missing token header x-bingo-token" });
   const { preference } = req.body;
-
-  const id = hashToken(token);
-  const db = await readDB();
-  const user = db.users[id];
+  const id = getUserId(req, res);
+  let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
   user.preference = !!preference;
-  await writeDB(db);
-  return res.json({ ok: true, preference: user.preference });
+  await writeUser(id, user);
+  res.json({ ok: true, preference: user.preference });
 });
 
 app.post("/api/newboard", async (req, res) => {
-  const token = getToken(req);
-  if (!token) return res.status(400).json({ error: "Missing token header x-bingo-token" });
-
-  const id = hashToken(token);
-  const db = await readDB();
-  const user = db.users[id];
+  const id = getUserId(req, res);
+  let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  let images = [];
-  try {
-    images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
-      /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
-    );
-  } catch {
-    return res.status(500).json({ error: "Images folder not found" });
-  }
+  const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
+    /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
+  );
+  if (images.length < 24)
+    return res.status(500).json({ error: "Not enough images" });
 
-  if (images.length < 24) return res.status(500).json({ error: "Not enough images" });
-
-  user.board = await makeBoard(images);
+  user.board = makeBoard(images);
   user.completed = false;
   user.lastGenerated = todayStr();
-  await writeDB(db);
-
-  return res.json({ ok: true, board: user.board });
+  await writeUser(id, user);
+  res.json({ ok: true, board: user.board });
 });
 
+// --- Start server ---
 app.listen(PORT, () => console.log(`✅ Bingo running at http://localhost:${PORT}`));
