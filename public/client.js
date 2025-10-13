@@ -200,7 +200,7 @@
   function takeScreenshot() {
   import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
     .then(async ({ toPng }) => {
-      // ✅ Wait for all board images to load before capture
+      // Wait until all images are fully loaded
       const images = boardEl.querySelectorAll("img");
       await Promise.all(
         Array.from(images).map(
@@ -215,19 +215,22 @@
         )
       );
 
-      // ✅ Now generate the image
+      // Safely render to PNG
       return toPng(boardEl, {
         pixelRatio: 2,
         backgroundColor: "#0d0d17",
         style: { padding: "10px", margin: "0" },
-        filter: (node) => node instanceof Element && !node.closest(".modal"),
+        filter: (node) =>
+          node instanceof Element &&
+          !node.closest(".modal") &&
+          node.id !== "status",
       });
     })
     .then((dataUrl) => {
       const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // ✅ Mobile-safe: open the real PNG in a new tab
+        // ✅ Mobile: open image in new tab for save/share
         const newTab = window.open();
         if (newTab) {
           newTab.document.write(`
@@ -242,7 +245,8 @@
                 height: 100vh;
               }
               img {
-                width: 95%;
+                width: 100%;
+                max-width: 95%;
                 height: auto;
                 border-radius: 12px;
                 box-shadow: 0 0 20px #000;
@@ -254,7 +258,7 @@
           alert("Please allow popups to open your screenshot.");
         }
       } else {
-        // 💻 Desktop: trigger a file download
+        // 💻 Desktop: download PNG directly
         const link = document.createElement("a");
         link.download = "bingo-board.png";
         link.href = dataUrl;
@@ -263,10 +267,11 @@
     })
     .catch((err) => {
       console.error("Screenshot failed:", err);
-      alert("Screenshot failed — make sure images are loaded and same-origin.");
+      alert(
+        "Screenshot failed — please make sure all images are loaded before capturing."
+      );
     });
 }
-
 
   // Preferences
   yesPref.addEventListener("click", async () => {
