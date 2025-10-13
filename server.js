@@ -1,16 +1,14 @@
-// server.js – Comicon Bingo (Turso + local fallback)
+// server.js – Comicon Bingo (Turso + local fallback, no cookies)
 import express from "express";
 import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
-import cookieParser from "cookie-parser";
 import { createClient } from "@libsql/client";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
@@ -18,12 +16,11 @@ const SALT = process.env.BINGO_SALT || "super-secret-salt";
 const SIZE = 5;
 const CENTER = { r: 2, c: 2 };
 
-// Local fallback DB file
 const DB_FILE = process.env.RENDER_DISK_PATH
   ? path.join(process.env.RENDER_DISK_PATH, "db.json")
   : path.join(__dirname, "db.json");
 
-// Turso setup (if env vars present)
+// --- Turso Setup ---
 let turso = null;
 if (process.env.TURSO_URL && process.env.TURSO_AUTH_TOKEN) {
   try {
@@ -39,17 +36,22 @@ if (process.env.TURSO_URL && process.env.TURSO_AUTH_TOKEN) {
       )
     `);
   } catch (err) {
-    console.error("⚠️ Turso init failed — using local JSON DB:", err.message);
+    console.error("⚠️ Turso init failed — falling back to local JSON:", err.message);
     turso = null;
   }
 }
 
 const IMAGES_DIR = path.join(__dirname, "public", "images");
 const todayStr = () => new Date().toLocaleDateString("en-CA");
-const hashId = (ipOrCookie) =>
-  crypto.createHash("sha256").update(ipOrCookie + SALT).digest("hex");
 
-// --- Helpers ---
+// --- Helper: Unique Device ID (no cookies) ---
+const getDeviceId = (req) => {
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress || "0.0.0.0";
+  const ua = req.headers["user-agent"] || "unknown";
+  return crypto.createHash("sha256").update(ip + ua + SALT).digest("hex");
+};
+
+// --- Local DB Helpers ---
 async function readLocalDB() {
   try {
     const raw = await fs.readFile(DB_FILE, "utf8");
@@ -65,7 +67,7 @@ async function writeLocalDB(db) {
   await fs.rename(tmp, DB_FILE);
 }
 
-// --- Turso user helpers ---
+// --- Turso Helpers ---
 async function readUser(id) {
   if (!turso) {
     const db = await readLocalDB();
@@ -92,7 +94,7 @@ async function writeUser(id, user) {
   });
 }
 
-// --- Board helpers ---
+// --- Board Logic ---
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -131,19 +133,9 @@ function makeBoard(images) {
   return board;
 }
 
-const getUserId = (req, res) => {
-  let uid = req.cookies?.bingoId;
-  if (!uid) {
-    const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
-    uid = hashId(ip);
-    res.cookie("bingoId", uid, { maxAge: 365 * 24 * 60 * 60 * 1000 });
-  }
-  return uid;
-};
-
 // --- Routes ---
 app.get("/api/board", async (req, res) => {
-  const id = getUserId(req, res);
+  const id = getDeviceId(req);
   const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
     /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
   );
@@ -174,7 +166,7 @@ app.get("/api/board", async (req, res) => {
 
 app.post("/api/click", async (req, res) => {
   const { row, col } = req.body;
-  const id = getUserId(req, res);
+  const id = getDeviceId(req);
   let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -192,7 +184,7 @@ app.post("/api/click", async (req, res) => {
 
 app.post("/api/preference", async (req, res) => {
   const { preference } = req.body;
-  const id = getUserId(req, res);
+  const id = getDeviceId(req);
   let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -202,7 +194,7 @@ app.post("/api/preference", async (req, res) => {
 });
 
 app.post("/api/newboard", async (req, res) => {
-  const id = getUserId(req, res);
+  const id = getDeviceId(req);
   let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -219,5 +211,4 @@ app.post("/api/newboard", async (req, res) => {
   res.json({ ok: true, board: user.board });
 });
 
-// --- Start server ---
 app.listen(PORT, () => console.log(`✅ Bingo running at http://localhost:${PORT}`));
