@@ -197,36 +197,59 @@
     hide(completeModal);
   });
 
-  function takeScreenshot() {
+  ffunction takeScreenshot() {
   import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
-    .then(({ toPng }) =>
-      toPng(boardEl, {
+    .then(async ({ toPng }) => {
+      // ✅ Wait for all board images to load before capture
+      const images = boardEl.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete) resolve();
+              else {
+                img.onload = resolve;
+                img.onerror = resolve;
+              }
+            })
+        )
+      );
+
+      // ✅ Now generate the image
+      return toPng(boardEl, {
         pixelRatio: 2,
         backgroundColor: "#0d0d17",
-        style: {
-          padding: "10px",
-          margin: "0",
-        },
-        // ✅ Prevents crashing on non-element nodes
-        filter: (node) => {
-          if (!(node instanceof Element)) return false;
-          // Exclude modals and status area from screenshot
-          return !node.closest(".modal") && node.id !== "status";
-        },
-      })
-    )
+        style: { padding: "10px", margin: "0" },
+        filter: (node) => node instanceof Element && !node.closest(".modal"),
+      });
+    })
     .then((dataUrl) => {
       const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // ✅ Mobile-safe: open image in new tab
+        // ✅ Mobile-safe: open the real PNG in a new tab
         const newTab = window.open();
         if (newTab) {
-          newTab.document.write(
-            `<title>Your Bingo Board</title>
-             <style>body{margin:0;background:#0d0d17;display:flex;justify-content:center;align-items:center;height:100vh;}</style>
-             <img src="${dataUrl}" style="width:95%;height:auto;border-radius:12px;box-shadow:0 0 20px #000;">`
-          );
+          newTab.document.write(`
+            <title>Your Bingo Board</title>
+            <style>
+              body {
+                margin: 0;
+                background: #0d0d17;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+              img {
+                width: 95%;
+                height: auto;
+                border-radius: 12px;
+                box-shadow: 0 0 20px #000;
+              }
+            </style>
+            <img src="${dataUrl}" alt="Bingo Board">
+          `);
         } else {
           alert("Please allow popups to open your screenshot.");
         }
@@ -240,7 +263,7 @@
     })
     .catch((err) => {
       console.error("Screenshot failed:", err);
-      alert("Screenshot failed — ensure images are local and same-origin.");
+      alert("Screenshot failed — make sure images are loaded and same-origin.");
     });
 }
 
