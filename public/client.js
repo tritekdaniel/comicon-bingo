@@ -199,7 +199,13 @@
 
   const takeScreenshot = () => {
     import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
-      .then(({ toPng }) => toPng(boardEl))
+      .then(({ toPng }) => {
+  const wrapper = document.createElement('div');
+  wrapper.style.padding = '0 0 20px 0';  // Bottom padding
+  wrapper.appendChild(boardEl.cloneNode(true));  // Clone to avoid moving the real board
+  document.body.appendChild(wrapper);  // Temporarily add to DOM for accurate rendering
+  return toPng(wrapper).finally(() => wrapper.remove());  // Clean up after
+})
       .then((dataUrl) => {
         const link = document.createElement("a");
         link.download = "bingo.png";
