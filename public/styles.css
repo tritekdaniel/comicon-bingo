@@ -84,7 +84,7 @@ button.secondary{
 }
 .modal.active{display:flex}
 .modal-box{
-  background:#141422;
+  background:#14221b;
   border-radius:12px;
   padding:1rem;
   width:min(90%,420px);
