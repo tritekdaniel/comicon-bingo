@@ -71,8 +71,8 @@
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
 
+        // clickable always (including center) — client confirms mark/unmark
         div.addEventListener("click", () => {
-          if (cell.fixed) return; // skip free tile confirmation
           pendingCell = { r, c };
           if (!cell.clicked) {
             confirmTitle.textContent = "Mark this square?";
@@ -89,7 +89,7 @@
     );
   }
 
-  // === Detect Bingos ===
+  // === Detect new bingos (new-lines only flash) ===
   function detectNewBingoLines(board) {
     const size = board.length;
     const newLines = [];
@@ -98,23 +98,18 @@
     const currentCols = new Set();
     const currentDiags = new Set();
 
-    // Rows
     for (let r = 0; r < size; r++) {
       if (board[r].every(isClicked)) currentRows.add(r);
     }
-
-    // Columns
     for (let c = 0; c < size; c++) {
       if (board.every((row) => isClicked(row[c]))) currentCols.add(c);
     }
-
-    // Diagonals
     const diag1 = Array.from({ length: size }, (_, i) => board[i][i]);
     const diag2 = Array.from({ length: size }, (_, i) => board[i][size - 1 - i]);
     if (diag1.every(isClicked)) currentDiags.add("main");
     if (diag2.every(isClicked)) currentDiags.add("anti");
 
-    // Detect *new* lines only
+    // detect newly completed lines
     currentRows.forEach((r) => {
       if (!completedRows.has(r)) newLines.push({ type: "row", index: r });
     });
@@ -125,12 +120,12 @@
       if (!completedDiags.has(d)) newLines.push({ type: d });
     });
 
-    // Update sets
+    // update sets to current state
     completedRows = currentRows;
     completedCols = currentCols;
     completedDiags = currentDiags;
 
-    // Flash new lines only
+    // flash only the newly completed lines
     const flashLine = (coords) => {
       coords.forEach(([r, c]) => {
         const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
@@ -155,7 +150,7 @@
     return newLines;
   }
 
-  // === Confirm click ===
+  // === Confirm click (toggle) ===
   confirmOk.addEventListener("click", async () => {
     hide(confirmModal);
     if (!pendingCell) return;
@@ -194,6 +189,7 @@
     hide(confirmModal);
   });
 
+  // Bingo / complete modals
   bingoOk.addEventListener("click", () => hide(bingoModal));
   completeOk.addEventListener("click", () => hide(completeModal));
   completeScreenshot.addEventListener("click", () => {
@@ -215,23 +211,17 @@
 
   // Preferences
   yesPref.addEventListener("click", async () => {
-    await api("/api/preference", {
-      method: "POST",
-      body: JSON.stringify({ preference: true }),
-    });
+    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: true }) });
     hide(prefModal);
     sessionStorage.setItem("askedPref", "1");
   });
   noPref.addEventListener("click", async () => {
-    await api("/api/preference", {
-      method: "POST",
-      body: JSON.stringify({ preference: false }),
-    });
+    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: false }) });
     hide(prefModal);
     sessionStorage.setItem("askedPref", "1");
   });
 
-  // New board
+  // New board flow
   document.getElementById("newBoard").addEventListener("click", () => {
     newTimerText.textContent = "You can confirm in 3...";
     show(newModal);
@@ -271,7 +261,7 @@
   });
   document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
-  // Load
+  // Initial load
   const { board, meta } = await api("/api/board");
   completedRows.clear();
   completedCols.clear();
