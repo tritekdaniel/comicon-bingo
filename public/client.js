@@ -201,25 +201,30 @@
   import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
     .then(({ toPng }) =>
       toPng(boardEl, {
-        pixelRatio: 2, // sharper image
-        backgroundColor: "#0d0d17", // solid background for consistent output
+        pixelRatio: 2,
+        backgroundColor: "#0d0d17",
         style: {
-          padding: "10px", // ensures no clipping around edges
+          padding: "10px",
           margin: "0",
         },
         filter: (node) => {
-          // exclude modals and buttons from screenshot
           return !node.closest(".modal") && node.id !== "status";
         },
       })
     )
     .then((dataUrl) => {
-      const img = new Image();
-      img.src = dataUrl;
-      const link = document.createElement("a");
-      link.download = "bingo-board.png";
-      link.href = dataUrl;
-      link.click();
+      // Mobile-friendly handling: open image in new tab/window
+      const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        const win = window.open();
+        win.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
+      } else {
+        // Desktop still downloads file
+        const link = document.createElement("a");
+        link.download = "bingo-board.png";
+        link.href = dataUrl;
+        link.click();
+      }
     })
     .catch((err) => {
       console.error(err);
