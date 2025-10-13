@@ -197,36 +197,43 @@
     hide(completeModal);
   });
 
-  function takeScreenshot() {
-  import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
-    .then(({ toPng }) =>
-      toPng(boardEl, {
-        pixelRatio: 2, // sharper image
-        backgroundColor: "#0d0d17", // solid background for consistent output
+function takeScreenshot() {
+  import("https://cdn.jsdelivr.net/npm/dom-to-image-more@2.9.3/dist/dom-to-image-more.min.js")
+    .then((domtoimage) => {
+      const boardContainer = boardEl.cloneNode(true);
+      boardContainer.style.padding = "10px";
+      boardContainer.style.margin = "0";
+      boardContainer.style.background = "#0d0d17";
+
+      const scale = window.devicePixelRatio || 1;
+
+      return domtoimage.toPng(boardContainer, {
+        bgcolor: "#0d0d17",
+        width: boardEl.offsetWidth * scale,
+        height: boardEl.offsetHeight * scale,
         style: {
-          padding: "10px", // ensures no clipping around edges
-          margin: "0",
+          transform: "scale(" + scale + ")",
+          transformOrigin: "top left",
         },
-        filter: (node) => {
-          // exclude modals and buttons from screenshot
-          return !node.closest(".modal") && node.id !== "status";
-        },
-      })
-    )
+        filter: (node) => !node.closest(".modal") && node.id !== "status",
+        cacheBust: true,
+      });
+    })
     .then((dataUrl) => {
-      const img = new Image();
-      img.src = dataUrl;
       const link = document.createElement("a");
       link.download = "bingo-board.png";
       link.href = dataUrl;
+
+      // Safari mobile requires user-initiated click
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     })
     .catch((err) => {
-      console.error(err);
-      alert("Screenshot failed — ensure images are local and same-origin.");
+      console.error("Screenshot failed:", err);
+      alert("Screenshot failed — this browser may block image capture.");
     });
 }
-
   // Preferences
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: true }) });
