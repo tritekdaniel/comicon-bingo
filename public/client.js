@@ -197,7 +197,7 @@
     hide(completeModal);
   });
 
-  ffunction takeScreenshot() {
+  function takeScreenshot() {
   import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
     .then(async ({ toPng }) => {
       // ✅ Wait for all board images to load before capture
@@ -266,6 +266,7 @@
       alert("Screenshot failed — make sure images are loaded and same-origin.");
     });
 }
+
 
   // Preferences
   yesPref.addEventListener("click", async () => {
