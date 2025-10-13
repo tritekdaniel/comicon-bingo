@@ -13,7 +13,7 @@
   const newTimerText = document.getElementById("newTimerText");
 
   const confirmModal = document.getElementById("confirmModal");
-  const confirmText = document.getElementById("confirmText");
+  const confirmMsg = document.getElementById("confirmMsg");
   const confirmOk = document.getElementById("confirmOk");
   const confirmCancel = document.getElementById("confirmCancel");
 
@@ -22,11 +22,12 @@
 
   const completeModal = document.getElementById("completeModal");
   const completeOk = document.getElementById("completeOk");
-  const screenshotBtn = document.getElementById("screenshotBtn");
+  const completeScreenshot = document.getElementById("completeScreenshot");
 
-  let pendingAction = null;
+  const screenshotBtn = document.getElementById("screenshot");
+
   let currentBoard = null;
-  let completedRows = new Set();
+  let completedLines = new Set();
 
   // API helper
   const api = async (path, opts = {}) => {
@@ -50,12 +51,10 @@
         if (cell.fixed) div.classList.add("fixed");
         div.dataset.r = r;
         div.dataset.c = c;
-
-        if (cell.clicked && cell.image) {
-          div.innerHTML = `<img src="${cell.image}" alt="${cell.text}">`;
-        } else {
-          div.textContent = cell.text;
-        }
+        div.innerHTML =
+          cell.clicked && cell.image
+            ? `<img src="${cell.image}" alt="${cell.text}">`
+            : cell.text;
 
         div.addEventListener("click", () => {
           if (cell.fixed) return;
@@ -71,52 +70,9 @@
     });
   };
 
-  // Check for Bingo (rows, columns, diagonals)
-  const checkBingo = (board) => {
-    const size = 5;
-    const bingos = [];
-
-    // Rows
-    for (let r = 0; r < size; r++) {
-      if (board[r].every((c) => c.clicked)) bingos.push(`r${r}`);
-    }
-
-    // Columns
-    for (let c = 0; c < size; c++) {
-      if (board.every((r) => r[c].clicked)) bingos.push(`c${c}`);
-    }
-
-    // Diagonals
-    if ([0, 1, 2, 3, 4].every((i) => board[i][i].clicked)) bingos.push("d1");
-    if ([0, 1, 2, 3, 4].every((i) => board[i][4 - i].clicked)) bingos.push("d2");
-
-    return bingos;
-  };
-
-  // Handle click on a cell
-  const clickCell = async (r, c) => {
-    const res = await api("/api/click", {
-      method: "POST",
-      body: JSON.stringify({ row: r, col: c }),
-    });
-
-    renderBoard(res.board);
-
-    const newBingos = checkBingo(res.board).filter((b) => !completedRows.has(b));
-
-    if (newBingos.length > 0) {
-      newBingos.forEach((b) => completedRows.add(b));
-      bingoModal.classList.add("active");
-    }
-
-    if (res.completed) {
-      completeModal.classList.add("active");
-    }
-  };
-
-  // Confirm action modal
+  // Confirm modal
   function confirmAction(message, onConfirm) {
-    confirmText.textContent = message;
+    confirmMsg.textContent = message;
     confirmModal.classList.add("active");
 
     const cleanup = () => {
@@ -135,13 +91,76 @@
     confirmCancel.addEventListener("click", cancelHandler);
   }
 
-  // Screenshot function
+  // Check bingo (rows, columns, diagonals)
+  const checkBingo = (board) => {
+    const size = 5;
+    const newWins = [];
+
+    // Rows
+    for (let r = 0; r < size; r++) {
+      if (board[r].every((c) => c.clicked)) newWins.push(`r${r}`);
+    }
+
+    // Columns
+    for (let c = 0; c < size; c++) {
+      if (board.every((r) => r[c].clicked)) newWins.push(`c${c}`);
+    }
+
+    // Diagonals
+    if ([0, 1, 2, 3, 4].every((i) => board[i][i].clicked)) newWins.push("d1");
+    if ([0, 1, 2, 3, 4].every((i) => board[i][4 - i].clicked)) newWins.push("d2");
+
+    return newWins;
+  };
+
+  // Flash highlight effect
+  const flashLine = (line) => {
+    const size = 5;
+    const cells = [];
+
+    if (line.startsWith("r")) {
+      const r = parseInt(line[1]);
+      for (let c = 0; c < size; c++) cells.push(document.querySelector(`[data-r="${r}"][data-c="${c}"]`));
+    } else if (line.startsWith("c")) {
+      const c = parseInt(line[1]);
+      for (let r = 0; r < size; r++) cells.push(document.querySelector(`[data-r="${r}"][data-c="${c}"]`));
+    } else if (line === "d1") {
+      for (let i = 0; i < size; i++) cells.push(document.querySelector(`[data-r="${i}"][data-c="${i}"]`));
+    } else if (line === "d2") {
+      for (let i = 0; i < size; i++) cells.push(document.querySelector(`[data-r="${i}"][data-c="${4 - i}"]`));
+    }
+
+    cells.forEach((el) => el?.classList.add("flash"));
+    setTimeout(() => cells.forEach((el) => el?.classList.remove("flash")), 600);
+  };
+
+  // Click handler
+  const clickCell = async (r, c) => {
+    const res = await api("/api/click", {
+      method: "POST",
+      body: JSON.stringify({ row: r, col: c }),
+    });
+
+    renderBoard(res.board);
+
+    const newWins = checkBingo(res.board).filter((w) => !completedLines.has(w));
+    if (newWins.length > 0) {
+      newWins.forEach((w) => {
+        completedLines.add(w);
+        flashLine(w);
+      });
+      bingoModal.classList.add("active");
+    }
+
+    if (res.completed) {
+      completeModal.classList.add("active");
+    }
+  };
+
+  // Screenshot
   function takeScreenshot() {
     const boardEl = document.getElementById("board");
-    if (!boardEl) {
-      alert("Bingo board not found!");
-      return;
-    }
+    if (!boardEl) return alert("Bingo board not found!");
 
     const scale = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 1 : 2;
     const options = {
@@ -160,7 +179,6 @@
           newTab.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
           return;
         }
-
         const link = document.createElement("a");
         link.download = "bingo-board.png";
         link.href = dataUrl;
@@ -175,6 +193,7 @@
   // Button handlers
   bingoOk.addEventListener("click", () => bingoModal.classList.remove("active"));
   completeOk.addEventListener("click", () => completeModal.classList.remove("active"));
+  completeScreenshot.addEventListener("click", takeScreenshot);
   screenshotBtn.addEventListener("click", takeScreenshot);
 
   yesPref.addEventListener("click", async () => {
@@ -213,7 +232,6 @@
   });
 
   cancelNew.addEventListener("click", () => newModal.classList.remove("active"));
-
   confirmNew.addEventListener("click", async () => {
     const res = await api("/api/newboard", { method: "POST" });
     if (res.ok) {
