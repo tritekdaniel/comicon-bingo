@@ -1,87 +1,75 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Comicon Bingo</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <header>
-    <h1>Comicon Bingo</h1>
-    <p class="subtitle">Tap the squares as you spot them!</p>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comicon Bingo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Comicon Bingo</h1>
+      <p class="subtitle">Tap a square when you spot it at the event!</p>
+    </header>
 
-  <main>
     <div id="board"></div>
-    <div id="status"></div>
-    <div class="buttons">
-      <button id="reset">Reload Board</button>
-      <button id="newBoard">New Board</button>
-      <button id="screenshot">Save Screenshot</button>
-    </div>
-  </main>
 
-  <!-- Confirm mark/unmark modal -->
-  <div id="confirmModal" class="modal">
-    <div class="modal-box">
-      <h3 id="confirmTitle">Confirm</h3>
-      <p id="confirmMsg">Are you sure?</p>
-      <div class="modal-buttons">
+    <div id="controls">
+      <button id="newBoard">New Board</button>
+      <button id="reset">Reset</button>
+      <button id="screenshot">Screenshot</button>
+    </div>
+
+    <p id="status"></p>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+      <div class="modal-box">
+        <h3 id="confirmTitle"></h3>
+        <p id="confirmMsg"></p>
         <button id="confirmOk">OK</button>
-        <button id="confirmCancel" class="secondary">Cancel</button>
+        <button id="confirmCancel">Cancel</button>
       </div>
     </div>
-  </div>
 
-  <!-- Bingo modal -->
-  <div id="bingoModal" class="modal">
-    <div class="modal-box">
-      <h3>🎉 Bingo!</h3>
-      <p id="bingoMsg">You completed a row, column, or diagonal!</p>
-      <div class="modal-buttons">
+    <!-- Bingo Modal -->
+    <div class="modal" id="bingoModal">
+      <div class="modal-box">
+        <h3 id="bingoText">🎉 Bingo!</h3>
         <button id="bingoOk">OK</button>
       </div>
     </div>
-  </div>
 
-  <!-- Board complete modal -->
-  <div id="completeModal" class="modal">
-    <div class="modal-box">
-      <h3>🎉 Congratulations!</h3>
-      <p>Board completed!</p>
-      <div class="modal-buttons">
+    <!-- Board Complete Modal -->
+    <div class="modal" id="completeModal">
+      <div class="modal-box">
+        <h3>🎊 Congratulations! Board Completed!</h3>
         <button id="completeOk">OK</button>
         <button id="completeScreenshot">Screenshot Board</button>
       </div>
     </div>
-  </div>
 
-  <!-- Preference modal -->
-  <div id="prefModal" class="modal">
-    <div class="modal-box">
-      <h3>Get a new board daily?</h3>
-      <p>Would you like a fresh bingo board each new day after finishing one?</p>
-      <div class="modal-buttons">
+    <!-- Preference Modal -->
+    <div class="modal" id="prefModal">
+      <div class="modal-box">
+        <h3>Get a new board daily?</h3>
+        <p>Would you like a fresh bingo board each new day after finishing one?</p>
         <button id="yesPref">Yes</button>
-        <button id="noPref" class="secondary">No</button>
+        <button id="noPref">No</button>
       </div>
     </div>
-  </div>
 
-  <!-- New board modal (with timer) -->
-  <div id="newModal" class="modal">
-    <div class="modal-box">
-      <h3>Start a new board?</h3>
-      <p>If you generate a new board now, you won’t receive a prize for the current one.</p>
-      <p id="newTimerText">You can confirm in 3...</p>
-      <div class="modal-buttons">
+    <!-- New Board Confirmation Modal -->
+    <div class="modal" id="newModal">
+      <div class="modal-box">
+        <h3>Start a new board?</h3>
+        <p>If you generate a new board now, you won’t receive a prize for the current one.</p>
+        <p id="newTimerText"></p>
         <button id="confirmNew">OK</button>
-        <button id="cancelNew" class="secondary">Cancel</button>
+        <button id="cancelNew">Cancel</button>
       </div>
     </div>
-  </div>
 
-  <script src="client.js"></script>
-</body>
+    <script type="module" src="client.js"></script>
+  </body>
 </html>
