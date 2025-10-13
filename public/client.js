@@ -197,80 +197,86 @@
     hide(completeModal);
   });
 
-  function takeScreenshot() {
-  import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
-    .then(async ({ toPng }) => {
-      // Wait until all images are fully loaded
-      const images = boardEl.querySelectorAll("img");
-      await Promise.all(
-        Array.from(images).map(
-          (img) =>
-            new Promise((resolve) => {
-              if (img.complete) resolve();
-              else {
-                img.onload = resolve;
-                img.onerror = resolve;
-              }
-            })
-        )
-      );
+  async function takeScreenshot() {
+  try {
+    const board = document.getElementById("board");
+    if (!board) return alert("No board found.");
 
-      // Safely render to PNG
-      return toPng(boardEl, {
-        pixelRatio: 2,
-        backgroundColor: "#0d0d17",
-        style: { padding: "10px", margin: "0" },
-        filter: (node) =>
-          node instanceof Element &&
-          !node.closest(".modal") &&
-          node.id !== "status",
-      });
-    })
-    .then((dataUrl) => {
-      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // ✅ Mobile: open image in new tab for save/share
-        const newTab = window.open();
-        if (newTab) {
-          newTab.document.write(`
-            <title>Your Bingo Board</title>
-            <style>
-              body {
-                margin: 0;
-                background: #0d0d17;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-              }
-              img {
-                width: 100%;
-                max-width: 95%;
-                height: auto;
-                border-radius: 12px;
-                box-shadow: 0 0 20px #000;
-              }
-            </style>
-            <img src="${dataUrl}" alt="Bingo Board">
-          `);
-        } else {
-          alert("Please allow popups to open your screenshot.");
-        }
-      } else {
-        // 💻 Desktop: download PNG directly
-        const link = document.createElement("a");
-        link.download = "bingo-board.png";
-        link.href = dataUrl;
-        link.click();
+    // ensure all images use absolute URLs
+    board.querySelectorAll("img").forEach((img) => {
+      if (img.src.startsWith("/")) {
+        img.src = location.origin + img.src;
       }
-    })
-    .catch((err) => {
-      console.error("Screenshot failed:", err);
-      alert(
-        "Screenshot failed — please make sure all images are loaded before capturing."
-      );
     });
+
+    // wait until all board images have loaded
+    const imgs = Array.from(board.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) resolve();
+            else {
+              img.onload = resolve;
+              img.onerror = resolve;
+            }
+          })
+      )
+    );
+
+    // render the board to a canvas
+    const rect = board.getBoundingClientRect();
+    const canvas = document.createElement("canvas");
+    canvas.width = rect.width * 2;   // high-res
+    canvas.height = rect.height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.fillStyle = "#0d0d17";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // draw the board contents
+    const clone = board.cloneNode(true);
+    // hide modals, etc.
+    clone.querySelectorAll(".modal").forEach((m) => m.remove());
+    document.body.appendChild(clone);
+    const { toBlob } = await import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm");
+    const blob = await toBlob(clone, {
+      backgroundColor: "#0d0d17",
+      pixelRatio: 2,
+      filter: (node) =>
+        node instanceof Element &&
+        !node.closest(".modal") &&
+        node.id !== "status",
+    });
+    clone.remove();
+
+    if (!blob) throw new Error("Failed to capture board.");
+
+    const dataUrl = URL.createObjectURL(blob);
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      const tab = window.open();
+      if (!tab) return alert("Please allow pop-ups to view screenshot.");
+      tab.document.write(`
+        <title>Your Bingo Board</title>
+        <style>
+          body{margin:0;background:#0d0d17;display:flex;align-items:center;justify-content:center;height:100vh}
+          img{max-width:95%;height:auto;border-radius:10px;box-shadow:0 0 20px #000}
+        </style>
+        <img src="${dataUrl}" alt="Bingo Board">
+      `);
+    } else {
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "bingo-board.png";
+      link.click();
+      URL.revokeObjectURL(dataUrl);
+    }
+  } catch (err) {
+    console.error("Screenshot failed:", err);
+    alert("Screenshot failed — try again after images load.");
+  }
 }
 
   // Preferences
