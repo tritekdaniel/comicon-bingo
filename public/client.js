@@ -197,43 +197,57 @@
     hide(completeModal);
   });
 
-function takeScreenshot() {
-  import("https://cdn.jsdelivr.net/npm/dom-to-image-more@2.9.3/dist/dom-to-image-more.min.js")
-    .then((domtoimage) => {
-      const boardContainer = boardEl.cloneNode(true);
-      boardContainer.style.padding = "10px";
-      boardContainer.style.margin = "0";
-      boardContainer.style.background = "#0d0d17";
+async function takeScreenshot() {
+  try {
+    // Dynamically choose the best renderer for the device
+    let renderer;
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      renderer = await import("https://cdn.jsdelivr.net/npm/dom-to-image-more@2.9.3/+esm");
+    } else {
+      renderer = await import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm");
+    }
 
-      const scale = window.devicePixelRatio || 1;
+    const target = document.getElementById("board");
+    if (!target) {
+      alert("Bingo board not found!");
+      return;
+    }
 
-      return domtoimage.toPng(boardContainer, {
-        bgcolor: "#0d0d17",
-        width: boardEl.offsetWidth * scale,
-        height: boardEl.offsetHeight * scale,
-        style: {
-          transform: "scale(" + scale + ")",
-          transformOrigin: "top left",
-        },
-        filter: (node) => !node.closest(".modal") && node.id !== "status",
-        cacheBust: true,
-      });
-    })
-    .then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = "bingo-board.png";
-      link.href = dataUrl;
+    // Ensure the board is fully visible and styled correctly
+    target.style.background = "#0d170fff";
+    target.style.padding = "10px";
 
-      // Safari mobile requires user-initiated click
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    })
-    .catch((err) => {
-      console.error("Screenshot failed:", err);
-      alert("Screenshot failed — this browser may block image capture.");
+    // Safari & Android Chrome prefer lower pixel ratio to avoid memory errors
+    const scale = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : 2;
+
+    // Use whichever renderer was loaded
+    const toPng = renderer.toPng || renderer.toBlob
+      ? (el, opts) => renderer.toPng(el, opts)
+      : (el, opts) => renderer.default.toPng(el, opts);
+
+    const dataUrl = await toPng(target, {
+      pixelRatio: scale,
+      backgroundColor: "#0d1711ff",
+      filter: (node) => !node.closest(".modal") && node.id !== "status",
+      cacheBust: true,
     });
+
+    // Create downloadable link (mobile-safe)
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "bingo-board.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Optional: show confirmation
+    console.log("✅ Screenshot saved!");
+  } catch (err) {
+    console.error("❌ Screenshot failed:", err);
+    alert("Screenshot failed. Some mobile browsers block image capture.");
+  }
 }
+
   // Preferences
   yesPref.addEventListener("click", async () => {
     await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: true }) });
