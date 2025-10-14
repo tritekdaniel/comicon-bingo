@@ -166,7 +166,7 @@ button.secondary{
 }
 
 #rules li::before {
-  content: "â‡ï¸";
+  content: "❇️";
   position: absolute;
   left: 0;
   color: var(--accent);
@@ -179,4 +179,21 @@ button.secondary{
   text-align: center;
   margin-top: 1.5rem;
   font-style: italic;
+}
+
+/* === FOOTER NOTICE === */
+#notice {
+  max-width: 750px;
+  margin: 2rem auto 1rem;
+  padding: 0.8rem 1rem;
+  border-top: 2px solid var(--accent);
+  color: #ccc;
+  font-size: 0.85rem;
+  text-align: center;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+#notice p {
+  margin: 0;
 }
