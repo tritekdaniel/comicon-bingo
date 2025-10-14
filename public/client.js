@@ -13,6 +13,7 @@
   const confirmCancel = document.getElementById("confirmCancel");
   const bingoModal = document.getElementById("bingoModal");
   const bingoOk = document.getElementById("bingoOk");
+  const bingoText = document.getElementById("bingoText");
   const completeModal = document.getElementById("completeModal");
   const completeOk = document.getElementById("completeOk");
   const completeScreenshot = document.getElementById("completeScreenshot");
@@ -30,7 +31,7 @@
   let pendingAction = null;
   let completedBingos = new Set();
 
-  // Render board
+  // === Render board ===
   const renderBoard = (board) => {
     currentBoard = board;
     boardEl.innerHTML = "";
@@ -52,24 +53,46 @@
     );
   };
 
+  // === Bingo check + highlight ===
+  const highlightLine = (type, index) => {
+    const SIZE = 5;
+    const cells = boardEl.querySelectorAll(".cell");
+    if (type === "r")
+      for (let c = 0; c < SIZE; c++)
+        cells[index * SIZE + c].classList.add("highlight");
+    if (type === "c")
+      for (let r = 0; r < SIZE; r++)
+        cells[r * SIZE + index].classList.add("highlight");
+    if (type === "d1")
+      for (let i = 0; i < SIZE; i++) cells[i * SIZE + i].classList.add("highlight");
+    if (type === "d2")
+      for (let i = 0; i < SIZE; i++)
+        cells[i * SIZE + (SIZE - 1 - i)].classList.add("highlight");
+  };
+
   const checkBingo = (board) => {
     const SIZE = 5;
     const bingos = [];
 
-    // Rows & columns
     for (let i = 0; i < SIZE; i++) {
       if (board[i].every((sq) => sq.clicked)) bingos.push("r" + i);
       if (board.every((r) => r[i].clicked)) bingos.push("c" + i);
     }
-    // Diagonals
     if (board.every((_, i) => board[i][i].clicked)) bingos.push("d1");
     if (board.every((_, i) => board[i][SIZE - 1 - i].clicked)) bingos.push("d2");
     return bingos;
   };
 
+  const getBingoDirectionText = (code) => {
+    if (code.startsWith("r")) return "Horizontal Bingo!";
+    if (code.startsWith("c")) return "Vertical Bingo!";
+    if (code === "d1" || code === "d2") return "Diagonal Bingo!";
+    return "Bingo!";
+  };
+
+  // === Handle clicks ===
   const handleClick = (r, c, cell) => {
     if (cell.fixed) return;
-
     pendingAction = { r, c, cell };
     const isUnmark = cell.clicked;
     document.getElementById("confirmTitle").textContent = isUnmark
@@ -92,11 +115,13 @@
     });
 
     renderBoard(res.board);
-
     const newBingos = checkBingo(res.board);
+
     for (const b of newBingos) {
       if (!completedBingos.has(b)) {
         completedBingos.add(b);
+        highlightLine(b[0], parseInt(b.slice(1)) || b); // flash new line
+        bingoText.textContent = "🎉 " + getBingoDirectionText(b);
         bingoModal.classList.add("active");
         break;
       }
@@ -110,14 +135,10 @@
     pendingAction = null;
   });
 
-  bingoOk.addEventListener("click", () =>
-    bingoModal.classList.remove("active")
-  );
+  bingoOk.addEventListener("click", () => bingoModal.classList.remove("active"));
+  completeOk.addEventListener("click", () => completeModal.classList.remove("active"));
 
-  completeOk.addEventListener("click", () =>
-    completeModal.classList.remove("active")
-  );
-
+  // === Screenshot ===
   const takeScreenshot = () => {
     import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
       .then(({ toPng }) => toPng(boardEl))
@@ -131,11 +152,10 @@
         alert("Screenshot failed — ensure images are local and same-origin.")
       );
   };
-
   completeScreenshot.addEventListener("click", takeScreenshot);
   document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
-  // Warning + preference flow
+  // === Warning + preference flow ===
   warningOk.addEventListener("click", () => {
     warningModal.classList.remove("active");
     localStorage.setItem("warningShown", "1");
@@ -160,6 +180,7 @@
     prefModal.classList.remove("active");
   });
 
+  // === Load board ===
   const loadBoard = async () => {
     const { board } = await api("/api/board");
     renderBoard(board);
