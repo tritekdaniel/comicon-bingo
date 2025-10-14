@@ -174,12 +174,12 @@
         return "a line";
       });
       const uniqueTypes = [...new Set(types)];
-      bingoText.textContent = `ðŸŽ‰ Bingo! You completed ${uniqueTypes.join(" and ")}!`;
+      bingoText.textContent = `🎉 Bingo! You completed ${uniqueTypes.join(" and ")}!`;
       show(bingoModal);
     }
 
     if (res.completed) {
-      statusEl.textContent = "ðŸŽŠ Board complete! Show your screen at the booth!";
+      statusEl.textContent = "🎊 Board complete! Show your screen at the booth!";
       show(completeModal);
     }
   });
