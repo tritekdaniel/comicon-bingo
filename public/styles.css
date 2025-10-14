@@ -1,189 +1,60 @@
-:root {
-  --accent:#18b918;
-  --bg:#0d170f;
-  --text:#f2f2f2;
-  --cell-size:min(18vw,90px);
-}
-*{box-sizing:border-box}
-body{
-  font-family:"Poppins",system-ui,sans-serif;
-  background:radial-gradient(circle at top,#1a2a1e,#0a140a);
-  color:var(--text);
-  margin:0;
-  padding:1rem;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  min-height:100vh;
-}
-header{text-align:center}
-h1{margin:0.3em 0 0;color:var(--accent);font-size:1.8rem}
-p.subtitle{font-size:0.9rem;opacity:0.85;margin-top:0.3em}
-
-#board{
-  display:grid;
-  grid-template-columns:repeat(5,var(--cell-size));
-  grid-auto-rows:var(--cell-size);
-  gap:8px;
-  margin:1rem auto;
-  touch-action:manipulation;
-}
-.cell{
-  background:rgba(255,255,255,0.05);
-  border-radius:10px;
-  border:2px solid transparent;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  font-weight:600;
-  font-size:0.8rem;
-  cursor:pointer;
-  user-select:none;
-  overflow:hidden;
-  color:var(--text);
-  transition:transform 0.15s ease,border 0.25s ease;
-}
-.cell img{width:100%;height:100%;object-fit:cover;display:none}
-.cell.clicked img{display:block}
-.cell.clicked{border-color:var(--accent);transform:scale(0.98);color:transparent}
-.cell.fixed{border:2px dashed rgba(255,255,255,0.2);color:var(--accent)}
-
-button{
-  background:var(--accent);
-  border:none;
-  color:#000;
-  font-weight:600;
-  border-radius:8px;
-  padding:0.6rem 1rem;
-  margin:0.3rem;
-  cursor:pointer;
-  transition:transform 0.1s ease, box-shadow 0.15s ease, filter 0.3s ease;
-}
-
-/* Hover glow effect */
-button:hover {
-  box-shadow: 0 0 12px var(--accent);
-  filter: brightness(1.15);
-}
-
-/* Press-down animation */
-button:active {
-  transform:scale(0.95);
-  box-shadow:0 0 8px var(--accent);
-  filter: brightness(0.95);
-}
-
-button.secondary{
-  background:none;
-  border:1px solid rgba(255,255,255,0.2);
-  color:var(--text);
-}
-
-.buttons {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:0.6rem;
-  width:100%;
-  margin:1rem auto;
-  text-align:center;
-}
-
-#status{
-  margin-top:0.6rem;
-  font-size:0.9rem;
-  text-align:center;
-  color:#fff9;
-}
-
-/* Modals */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:1000;
-}
-.modal.active{display:flex}
-.modal-box{
-  background:#14221b;
-  border-radius:12px;
-  padding:1rem;
-  width:min(90%,420px);
-  text-align:center;
-}
-.modal-box h3{margin-top:0;color:var(--accent)}
-.modal-buttons{display:flex;justify-content:center;gap:1rem;margin-top:0.6rem}
-
-/* Bingo flash */
-.cell.highlight{
-  animation:bingoGlow 1.5s ease-in-out;
-  border-color:var(--accent)!important;
-  box-shadow:0 0 12px var(--accent);
-}
-@keyframes bingoGlow{
-  0%{transform:scale(1);filter:brightness(1)}
-  50%{transform:scale(1.05);filter:brightness(1.4)}
-  100%{transform:scale(1);filter:brightness(1)}
-}
-
-@media(max-width:480px){
-  :root{--cell-size:16vw}
-  h1{font-size:1.4rem}
-}
-
-/* === RULES SECTION === */
-#rules {
-  max-width: 700px;
-  margin-top: 2rem;
-  padding: 1rem;
-  border-top: 2px solid var(--accent);
-  scroll-margin-top: 80px;
-}
-
-#rules h2 {
-  color: var(--accent);
+body {
+  font-family: "Trebuchet MS", sans-serif;
+  background-color: #003300;
+  color: white;
   text-align: center;
-  font-weight: 700;
-  font-size: 1.6rem;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
-#rules ul {
-  list-style: none;
-  padding-left: 0;
+h1 {
+  color: #00ff00;
+  font-weight: bold;
+  margin-top: 1rem;
 }
 
-#rules li {
-  color: var(--text);
-  margin: 0.6rem 0;
-  position: relative;
-  padding-left: 1.5rem;
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  width: min(90vw, 500px);
+  margin: 1rem auto;
 }
 
-#rules li::before {
-  content: "❇️";
-  position: absolute;
-  left: 0;
-  color: var(--accent);
+.cell {
+  background-color: #004d00;
+  border: 2px solid #00ff00;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.1s ease;
 }
 
-#rules .reminder {
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 1.1rem;
-  text-align: center;
-  margin-top: 1.5rem;
-  font-style: italic;
+.cell:hover {
+  background-color: #006600;
 }
 
-#warningModal .modal-box {
-  border: 2px solid var(--accent);
-  background: #14221b;
+.cell:active {
+  transform: scale(0.96);
+}
+
+.cell.clicked img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cell.highlight {
+  animation: flash 0.5s ease;
+}
+
+@keyframes flash {
+  0% { background-color: #00ff00; }
+  50% { background-color: #004d00; }
+  100% { background-color: #00ff00; }
 }
 
 .buttons {
@@ -192,18 +63,67 @@ button.secondary{
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
-  width: 100%;
   margin: 1rem auto;
-  text-align: center;
 }
 
-button {
-  transition: transform 0.1s ease, box-shadow 0.2s ease;
+.buttons button {
+  background-color: #004d00;
+  color: white;
+  border: 2px solid #00ff00;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: transform 0.1s ease, background-color 0.3s ease;
 }
-button:active {
-  transform: scale(0.96);
-  box-shadow: 0 0 6px var(--accent);
+
+.buttons button:hover {
+  background-color: #006600;
 }
-button:hover {
-  filter: brightness(1.1);
+
+.buttons button:active {
+  transform: scale(0.95);
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: #003300;
+  border: 2px solid #00ff00;
+  padding: 1.5rem;
+  border-radius: 10px;
+  max-width: 320px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.modal-buttons button {
+  border: 2px solid #00ff00;
+  background-color: #004d00;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-buttons button:hover {
+  background-color: #006600;
 }

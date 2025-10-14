@@ -1,13 +1,6 @@
 (async function () {
   const boardEl = document.getElementById("board");
-  const statusEl = document.getElementById("status");
 
-  // Modals
-  const warningModal = document.getElementById("warningModal");
-  const warningOk = document.getElementById("warningOk");
-  const prefModal = document.getElementById("prefModal");
-  const yesPref = document.getElementById("yesPref");
-  const noPref = document.getElementById("noPref");
   const confirmModal = document.getElementById("confirmModal");
   const confirmOk = document.getElementById("confirmOk");
   const confirmCancel = document.getElementById("confirmCancel");
@@ -31,7 +24,6 @@
   let pendingAction = null;
   let completedBingos = new Set();
 
-  // === Render board ===
   const renderBoard = (board) => {
     currentBoard = board;
     boardEl.innerHTML = "";
@@ -53,7 +45,6 @@
     );
   };
 
-  // === Bingo check + highlight ===
   const highlightLine = (type, index) => {
     const SIZE = 5;
     const cells = boardEl.querySelectorAll(".cell");
@@ -90,7 +81,6 @@
     return "Bingo!";
   };
 
-  // === Handle clicks ===
   const handleClick = (r, c, cell) => {
     if (cell.fixed) return;
     pendingAction = { r, c, cell };
@@ -120,7 +110,7 @@
     for (const b of newBingos) {
       if (!completedBingos.has(b)) {
         completedBingos.add(b);
-        highlightLine(b[0], parseInt(b.slice(1)) || b); // flash new line
+        highlightLine(b[0], parseInt(b.slice(1)) || b);
         bingoText.textContent = "🎉 " + getBingoDirectionText(b);
         bingoModal.classList.add("active");
         break;
@@ -138,7 +128,6 @@
   bingoOk.addEventListener("click", () => bingoModal.classList.remove("active"));
   completeOk.addEventListener("click", () => completeModal.classList.remove("active"));
 
-  // === Screenshot ===
   const takeScreenshot = () => {
     import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
       .then(({ toPng }) => toPng(boardEl))
@@ -148,49 +137,11 @@
         link.href = dataUrl;
         link.click();
       })
-      .catch(() =>
-        alert("Screenshot failed — ensure images are local and same-origin.")
-      );
+      .catch(() => alert("Screenshot failed — ensure images are same-origin."));
   };
   completeScreenshot.addEventListener("click", takeScreenshot);
   document.getElementById("screenshot").addEventListener("click", takeScreenshot);
 
-  // === Warning + preference flow ===
-  warningOk.addEventListener("click", () => {
-    warningModal.classList.remove("active");
-    localStorage.setItem("warningShown", "1");
-    prefModal.classList.add("active");
-  });
-
-  yesPref.addEventListener("click", async () => {
-    await api("/api/preference", {
-      method: "POST",
-      body: JSON.stringify({ preference: true }),
-    });
-    sessionStorage.setItem("askedPref", "1");
-    prefModal.classList.remove("active");
-  });
-
-  noPref.addEventListener("click", async () => {
-    await api("/api/preference", {
-      method: "POST",
-      body: JSON.stringify({ preference: false }),
-    });
-    sessionStorage.setItem("askedPref", "1");
-    prefModal.classList.remove("active");
-  });
-
-  // === Load board ===
-  const loadBoard = async () => {
-    const { board } = await api("/api/board");
-    renderBoard(board);
-  };
-
-  await loadBoard();
-
-  if (!localStorage.getItem("warningShown")) {
-    warningModal.classList.add("active");
-  } else if (!sessionStorage.getItem("askedPref")) {
-    prefModal.classList.add("active");
-  }
+  const { board } = await api("/api/board");
+  renderBoard(board);
 })();
