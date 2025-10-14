@@ -58,13 +58,20 @@ button{
   padding:0.6rem 1rem;
   margin:0.3rem;
   cursor:pointer;
-  transition:transform 0.1s ease, box-shadow 0.15s ease;
+  transition:transform 0.1s ease, box-shadow 0.15s ease, filter 0.3s ease;
+}
+
+/* Hover glow effect */
+button:hover {
+  box-shadow: 0 0 12px var(--accent);
+  filter: brightness(1.15);
 }
 
 /* Press-down animation */
 button:active {
   transform:scale(0.95);
   box-shadow:0 0 8px var(--accent);
+  filter: brightness(0.95);
 }
 
 button.secondary{
