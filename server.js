@@ -76,8 +76,8 @@ function makeBoard(images) {
         board[r][c] = {
           text: "FREE",
           image: emLogo ? `/images/${encodeURIComponent(emLogo)}` : null,
-          clicked: true,
-          fixed: true,
+          clicked: false,
+          fixed: false,
         };
       } else {
         const file = list[idx++];
