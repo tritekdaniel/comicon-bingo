@@ -185,3 +185,25 @@ button.secondary{
   border: 2px solid var(--accent);
   background: #14221b;
 }
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 1rem auto;
+  text-align: center;
+}
+
+button {
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+button:active {
+  transform: scale(0.96);
+  box-shadow: 0 0 6px var(--accent);
+}
+button:hover {
+  filter: brightness(1.1);
+}
