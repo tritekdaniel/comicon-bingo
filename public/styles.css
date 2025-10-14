@@ -180,3 +180,8 @@ button.secondary{
   margin-top: 1.5rem;
   font-style: italic;
 }
+
+#warningModal .modal-box {
+  border: 2px solid var(--accent);
+  background: #14221b;
+}

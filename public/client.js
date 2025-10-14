@@ -54,6 +54,34 @@
   const hide = (el) => el.classList.remove("active");
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
+  (async function () {
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+
+  // Warning modal
+  const warningModal = document.getElementById("warningModal");
+  const warningOk = document.getElementById("warningOk");
+
+  // Preference modal
+  const prefModal = document.getElementById("prefModal");
+  const yesPref = document.getElementById("yesPref");
+  const noPref = document.getElementById("noPref");
+
+  // New board modal
+  const newModal = document.getElementById("newModal");
+  const confirmNew = document.getElementById("confirmNew");
+  const cancelNew = document.getElementById("cancelNew");
+  const newTimerText = document.getElementById("newTimerText");
+
+  // Warning modal always shows on page load
+  warningModal.classList.add("active");
+  warningOk.addEventListener("click", () => {
+    warningModal.classList.remove("active");
+  });
+
+  // (rest of your existing client.js code follows here)
+})();
+
   // === Render board ===
   function renderBoard(board) {
     currentBoard = board;
