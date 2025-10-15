@@ -214,7 +214,7 @@
       })
       .catch((e) => {
         console.error("screenshot error", e);
-        alert("Screenshot failed â€” ensure images are local and same-origin.");
+        alert(":/ Screenshot failed. Please contact maintainer @: arandomuser2319@gmail.com with the error");
       });
   };
 
