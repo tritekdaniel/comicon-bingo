@@ -54,6 +54,21 @@
   const hide = (el) => el.classList.remove("active");
   const isClicked = (sq) => sq.clicked || sq.fixed;
 
+
+//------------------------this is not a good sign
+
+// ---- blurbs ----
+const newBoardBlurbs = [
+  "Slate cleaned",
+  "Spiders stomped",
+  "Dice rolled",
+  "Realization set in"
+];
+
+let lastBlurbIndex = -1;
+
+//------------------------- erase me if need be
+
   // === Render board ===
   function renderBoard(board) {
     currentBoard = board;
@@ -248,17 +263,26 @@
     }, 1000);
   });
   cancelNew.addEventListener("click", () => hide(newModal));
-  confirmNew.addEventListener("click", async () => {
-    hide(newModal);
-    const res = await api("/api/newboard", { method: "POST" });
-    if (res && res.ok) {
-      completedRows.clear();
-      completedCols.clear();
-      completedDiags.clear();
-      renderBoard(res.board);
-      statusEl.textContent = "New board generated.";
-    }
-  });
+ confirmNew.addEventListener("click", async () => {
+  hide(newModal);
+  const res = await api("/api/newboard", { method: "POST" });
+
+  if (res && res.ok) {
+    completedRows.clear();
+    completedCols.clear();
+    completedDiags.clear();
+    renderBoard(res.board);
+
+    let index;
+    do {
+      index = Math.floor(Math.random() * newBoardBlurbs.length);
+    } while (index === lastBlurbIndex && newBoardBlurbs.length > 1);
+
+    lastBlurbIndex = index;
+    statusEl.textContent = newBoardBlurbs[index];
+  }
+});
+
 
   // Buttons
   document.getElementById("reset").addEventListener("click", async () => {
