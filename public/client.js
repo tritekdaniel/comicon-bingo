@@ -60,13 +60,13 @@
 // ---- blurbs ----
 const newBoardBlurbs = [
   "Slate cleaned",
-  "Spiders stomped",
-  "Dice rolled",
+  "Spiders stomped... wait no that's bugs... and those aren't stomped either lol",
+  "Digital dice rolled",
   "Realization set in",
   "Rethinking your decisions",
   "Happy nothing exploded",
   "Wary of random numbers",
-  "Unsure of wether to procede",
+  "Unsure of whether to procede",
   "Wants to go back",
   "Surprised that this worked",
   ":O",
@@ -79,7 +79,28 @@ const newBoardBlurbs = [
   "Noting that this was intentional",
   "Apparently this is broken... jk this works of course",
   "Waiting for the 0.1 of CPU to catch up",
-  "Convincing self this is fine"
+  "Convincing self this is fine",
+  "Recovering from shock",
+  "Embracing chaos",
+  "Aknowledging that this is the best form of bingo",
+  "Art arrangement accomplished",
+  "It says 'Put something witty'. Huh.",
+  "Crashing your web browser",
+  "Drawing paper slip from digital hat",
+  ":/ A computer spent a whole 0.001 seconds randomizing that last board",
+  "Wishing render were faster",
+  "Wait 'Allocate RAM' means fill it up, right?",
+  "Removing jokers from deck... wait, DC villains is a potential square isn't it...",
+  "Consulting the Magic 8- Ball... 'Outlook good' does not seem like a proper response for this",
+  "Wasting the Web Developer's space",
+  "Pretending to do something important",
+  "If you regenerated a board before, you probably know why this text is here. Otherwise, you must be very confused.",
+  "Trying to look productive",
+  "This is indeed status text",
+  "Wondering if anyone reads these",
+  "Relieving boredom. Get it? Board-om? ...I'm sorry",
+  "Making inside jokes",
+  "*text*"
 ];
 
 let lastBlurbIndex = -1;
