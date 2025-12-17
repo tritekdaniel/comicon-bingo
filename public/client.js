@@ -17,7 +17,10 @@
   const completeOk = document.getElementById("completeOk");
   const completeScreenshot = document.getElementById("completeScreenshot");
 
-  const prefModal = document.getElementById("prefModal");
+  //const prefModal = document.getElementById("prefModal");
+  const welcomeModal = document.getElementById("welcomeModal");
+  const welcomeOk = document.getElementById("welcomeOk");
+  // these are extra
   const yesPref = document.getElementById("yesPref");
   const noPref = document.getElementById("noPref");
 
@@ -109,10 +112,10 @@ let lastBlurbIndex = -1;
           pendingCell = { r, c };
           if (!cell.clicked) {
             confirmTitle.textContent = "Mark this square?";
-            confirmMsg.textContent = "Are you sure you want to select this square?";
+            confirmMsg.textContent = "Confirm Markation (is that a word?)";
           } else {
             confirmTitle.textContent = "Unmark?";
-            confirmMsg.textContent = "Are you sure you want to unmark this square?";
+            confirmMsg.textContent = "Confirm Unmark";
           }
           show(confirmModal);
         });
@@ -229,6 +232,13 @@ let lastBlurbIndex = -1;
     takeScreenshot();
     hide(completeModal);
   });
+  // Welcome modal
+welcomeOk.addEventListener("click", () => {
+  hide(welcomeModal);
+  sessionStorage.setItem("seenWelcome", "1");
+});
+
+// REMOVE THIS IF NECESSARY!!!!!!----------------------------------------------------------------
 
   const takeScreenshot = () => {
     import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
@@ -318,5 +328,10 @@ let lastBlurbIndex = -1;
   completedCols.clear();
   completedDiags.clear();
   renderBoard(board);
-  if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
+ // if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
+ 
+if (!sessionStorage.getItem("seenWelcome")) {
+  show(welcomeModal);
+}
+
 })();
