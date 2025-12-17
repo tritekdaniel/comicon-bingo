@@ -17,10 +17,7 @@
   const completeOk = document.getElementById("completeOk");
   const completeScreenshot = document.getElementById("completeScreenshot");
 
-  //const prefModal = document.getElementById("prefModal");
-  const welcomeModal = document.getElementById("welcomeModal");
-  const welcomeOk = document.getElementById("welcomeOk");
-  // these are extra
+  const prefModal = document.getElementById("prefModal");
   const yesPref = document.getElementById("yesPref");
   const noPref = document.getElementById("noPref");
 
@@ -69,7 +66,7 @@ const newBoardBlurbs = [
   "Rethinking your decisions",
   "Happy nothing exploded",
   "Wary of random numbers",
-  "Unsure of whether to procede",
+  "Unsure of wether to procede",
   "Wants to go back",
   "Surprised that this worked",
   ":O",
@@ -80,10 +77,9 @@ const newBoardBlurbs = [
   "About to reroll again",
   "Tychophobia overcome",
   "Noting that this was intentional",
-  "apparently broken... jk this works of course",
+  "Apparently this is broken... jk this works of course",
   "Waiting for the 0.1 of CPU to catch up",
-  "Convincing self 'better luck this time'",
-  "Wishing that your luck stats were higher"
+  "Convincing self this is fine"
 ];
 
 let lastBlurbIndex = -1;
@@ -112,10 +108,10 @@ let lastBlurbIndex = -1;
           pendingCell = { r, c };
           if (!cell.clicked) {
             confirmTitle.textContent = "Mark this square?";
-            confirmMsg.textContent = "Confirm Markation (is that a word?)";
+            confirmMsg.textContent = "Are you sure you want to select this square?";
           } else {
             confirmTitle.textContent = "Unmark?";
-            confirmMsg.textContent = "Confirm Unmark";
+            confirmMsg.textContent = "Are you sure you want to unmark this square?";
           }
           show(confirmModal);
         });
@@ -232,13 +228,6 @@ let lastBlurbIndex = -1;
     takeScreenshot();
     hide(completeModal);
   });
-  // Welcome modal
-welcomeOk.addEventListener("click", () => {
-  hide(welcomeModal);
-  sessionStorage.setItem("seenWelcome", "1");
-});
-
-// REMOVE THIS IF NECESSARY!!!!!!----------------------------------------------------------------
 
   const takeScreenshot = () => {
     import("https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm")
@@ -328,10 +317,5 @@ welcomeOk.addEventListener("click", () => {
   completedCols.clear();
   completedDiags.clear();
   renderBoard(board);
- // if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
- 
-if (!sessionStorage.getItem("seenWelcome")) {
-  show(welcomeModal);
-}
-
+  if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
 })();
