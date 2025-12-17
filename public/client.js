@@ -59,10 +59,28 @@
 
 // ---- blurbs ----
 const newBoardBlurbs = [
-  "Slate cleaned",
-  "Spiders stomped",
-  "Dice rolled",
-  "Realization set in"
+  "Status: Slate cleaned",
+  "Status: Spiders stomped",
+  "Status: Dice rolled",
+  "Status: Realization set in",
+  "Status: Rethinking your decisions",
+  "Status: Happy nothing exploded",
+  "Status: Wary of random numbers",
+  "Status: Unsure of wether to procede",
+  "Status: Wants to go back",
+  "Status: Surprised that this worked",
+  "Status: :O",
+  "Status: Likes pushing buttons",
+  "Status: Wishing time travel were real",
+  "Status: 'what have I done?'",
+  "Status: No going back now",
+  "Status: About to reroll again",
+  "Status: Tychophobia overcome",
+  "Status: Noting that this was intentional",
+  "Status: apparently broken... jk this works of course",
+  "Status: Waiting for the 0.1 of CPU to catch up",
+  "Status: Convincing self this is 'better luck this time'",
+  "Status: Wishing that your luck stats were higher"
 ];
 
 let lastBlurbIndex = -1;
