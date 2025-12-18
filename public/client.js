@@ -88,7 +88,7 @@ const newBoardBlurbs = [
   "Crashing your web browser",
   "Drawing paper slip from digital hat",
   ":/ A computer spent a whole 0.001 seconds randomizing that last board",
-  "Wishing render were faster",
+  "Wishing render was faster",
   "Wait 'Allocate RAM' means fill it up, right?",
   "Removing jokers from deck... wait, DC villains is a potential square isn't it...",
   "Consulting the Magic 8- Ball... 'Outlook good' does not seem like a proper response for this",
