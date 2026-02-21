@@ -64,7 +64,7 @@ const newBoardBlurbs = [
   ":/ A computer spent a whole 0.01 of a second randomizing that last board",
   "This is indeed status text",
   "Hi there :)",
-  "Boredom relieved?. Get it? Board-om? ...I'm sorry",
+  "Boredom relieved? Get it? Board-om? ...I'm sorry",
   "*text*"
 ];
 
