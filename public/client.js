@@ -93,11 +93,11 @@ let lastBlurbIndex = -1;
         div.addEventListener("click", () => {
           pendingCell = { r, c };
           if (!cell.clicked) {
-            confirmTitle.textContent = "Mark this square?";
-            confirmMsg.textContent = "Are you sure you want to select this square?";
+            confirmTitle.textContent = "Mark?";
+            confirmMsg.textContent = "Comfirm Mark";
           } else {
             confirmTitle.textContent = "Unmark?";
-            confirmMsg.textContent = "Are you sure you want to unmark this square?";
+            confirmMsg.textContent = "Confirm Unmark";
           }
           show(confirmModal);
         });
