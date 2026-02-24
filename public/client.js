@@ -94,7 +94,7 @@ let lastBlurbIndex = -1;
           pendingCell = { r, c };
           if (!cell.clicked) {
             confirmTitle.textContent = "Mark?";
-            confirmMsg.textContent = "Comfirm Mark";
+            confirmMsg.textContent = "Confirm Mark";
           } else {
             confirmTitle.textContent = "Unmark?";
             confirmMsg.textContent = "Confirm Unmark";
