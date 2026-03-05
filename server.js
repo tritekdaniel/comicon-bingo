@@ -99,8 +99,10 @@ app.get("/api/board", async (req, res) => {
   const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
     /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
   );
-  if (images.length < 24)
+
+  if (images.length < 24) {
     return res.status(500).json({ error: "Need at least 24 images in /public/images" });
+  }
 
   const today = todayStr();
   let user = await readUser(id);
@@ -110,17 +112,13 @@ app.get("/api/board", async (req, res) => {
       created: today,
       lastGenerated: today,
       completed: false,
-      preference: false,
       board: makeBoard(images),
     };
-    await writeUser(id, user);
-  } else if (user.preference && user.completed && user.lastGenerated !== today) {
-    user.board = makeBoard(images);
-    user.completed = false;
-    user.lastGenerated = today;
+
     await writeUser(id, user);
   }
 
+  // Always respond
   res.json({ board: user.board, meta: user });
 });
 
@@ -142,16 +140,6 @@ app.post("/api/click", async (req, res) => {
   res.json({ ok: true, completed: user.completed, board: user.board });
 });
 
-app.post("/api/preference", async (req, res) => {
-  const { preference } = req.body;
-  const id = hashDevice(req);
-  let user = await readUser(id);
-  if (!user) return res.status(404).json({ error: "User not found" });
-
-  user.preference = !!preference;
-  await writeUser(id, user);
-  res.json({ ok: true, preference: user.preference });
-});
 
 app.post("/api/newboard", async (req, res) => {
   const id = hashDevice(req);

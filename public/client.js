@@ -17,10 +17,6 @@
   const completeOk = document.getElementById("completeOk");
   const completeScreenshot = document.getElementById("completeScreenshot");
 
-  const prefModal = document.getElementById("prefModal");
-  const yesPref = document.getElementById("yesPref");
-  const noPref = document.getElementById("noPref");
-
   const newModal = document.getElementById("newModal");
   const newTimerText = document.getElementById("newTimerText");
   const confirmNew = document.getElementById("confirmNew");
@@ -236,17 +232,6 @@ let lastBlurbIndex = -1;
       });
   };
 
-  // Preferences
-  yesPref.addEventListener("click", async () => {
-    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: true }) });
-    hide(prefModal);
-    sessionStorage.setItem("askedPref", "1");
-  });
-  noPref.addEventListener("click", async () => {
-    await api("/api/preference", { method: "POST", body: JSON.stringify({ preference: false }) });
-    hide(prefModal);
-    sessionStorage.setItem("askedPref", "1");
-  });
 
   // New board flow
   document.getElementById("newBoard").addEventListener("click", () => {
@@ -303,5 +288,4 @@ let lastBlurbIndex = -1;
   completedCols.clear();
   completedDiags.clear();
   renderBoard(board);
-  if (meta && !sessionStorage.getItem("askedPref")) show(prefModal);
 })();
