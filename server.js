@@ -32,9 +32,9 @@ console.log("✅ Connected to Supabase");
 // --- Helper: ID generation ---
 const todayStr = () => new Date().toLocaleDateString("en-CA");
 const hashDevice = (req) => {
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress || "0.0.0.0";
-  const ua = req.headers["user-agent"] || "unknown";
-  return crypto.createHash("sha256").update(ip + ua + SALT).digest("hex");
+  const token = req.headers["x-bingo-token"];
+  if (!token) return null;
+  return crypto.createHash("sha256").update(token + SALT).digest("hex");
 };
 
 // --- Supabase read/write ---
