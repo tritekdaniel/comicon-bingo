@@ -236,3 +236,10 @@ button.secondary{
   opacity: 0.8;
   text-shadow: 0 0 6px var(--accent);
 }
+
+/* Accent bold text (non-link emphasis) */
+.accent-bold {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.3px; /* subtle styling touch */
+}
