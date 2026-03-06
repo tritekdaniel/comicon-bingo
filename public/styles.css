@@ -48,10 +48,7 @@ p.subtitle{font-size:0.9rem;opacity:0.85;margin-top:0.3em}
 .cell.clicked img{display:block}
 .cell.clicked{border-color:var(--accent);transform:scale(0.98);color:transparent}
 .cell.fixed{border:2px dashed rgba(255,255,255,0.2);color:var(--accent)}
-.cell{
-  word-break: break-word;
-  line-height:1.1;
-}
+
 
 button{
   background:var(--accent);
