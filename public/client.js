@@ -30,21 +30,27 @@
   let completedDiags = new Set();
 
   const api = async (path, opts = {}) => {
-    const token =
-      localStorage.getItem("bingo_token") ||
-      (() => {
-        const t = crypto.randomUUID();
-        localStorage.setItem("bingo_token", t);
-        return t;
-      })();
+  const getCookie = (name) =>
+  document.cookie.split("; ").find(row => row.startsWith(name + "="))?.split("=")[1];
 
-    const res = await fetch(path, {
-      headers: { "Content-Type": "application/json", "x-bingo-token": token },
-      credentials: "same-origin",
-      ...opts,
-    });
-    return res.json();
-  };
+const token =
+  localStorage.getItem("bingo_token") ||
+  getCookie("bingo_token") ||
+  (() => {
+    const t = crypto.randomUUID();
+    localStorage.setItem("bingo_token", t);
+    document.cookie = `bingo_token=${t}; max-age=31536000; path=/`;
+    return t;
+  })();
+
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json", "x-bingo-token": token },
+    credentials: "same-origin",
+    ...opts,
+  });
+
+  return res.json();
+};
 
   const show = (el) => el.classList.add("active");
   const hide = (el) => el.classList.remove("active");

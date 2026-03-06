@@ -31,6 +31,7 @@ console.log("✅ Connected to Supabase");
 
 // --- Helper: ID generation ---
 const todayStr = () => new Date().toLocaleDateString("en-CA");
+
 const hashDevice = (req) => {
   const token = req.headers["x-bingo-token"];
   if (!token) return null;
@@ -96,6 +97,7 @@ function makeBoard(images) {
 // --- API Routes ---
 app.get("/api/board", async (req, res) => {
   const id = hashDevice(req);
+    if (!id) return res.status(400).json({ error: "Missing token" });
   const images = (await fs.readdir(IMAGES_DIR)).filter((f) =>
     /\.(png|jpg|jpeg|webp|gif)$/i.test(f)
   );
@@ -125,6 +127,7 @@ app.get("/api/board", async (req, res) => {
 app.post("/api/click", async (req, res) => {
   const { row, col } = req.body;
   const id = hashDevice(req);
+    if (!id) return res.status(400).json({ error: "Missing token" });
   let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -143,6 +146,7 @@ app.post("/api/click", async (req, res) => {
 
 app.post("/api/newboard", async (req, res) => {
   const id = hashDevice(req);
+    if (!id) return res.status(400).json({ error: "Missing token" });
   let user = await readUser(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
