@@ -73,7 +73,18 @@ const newBoardBlurbs = [
 let lastBlurbIndex = -1;
 
 //------------------------- erase me if need be
+function fitTextToCell(el) {
+  let fontSize = parseFloat(window.getComputedStyle(el).fontSize);
 
+  while (
+    (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) &&
+    fontSize > 8
+  ) {
+    fontSize -= 1;
+    el.style.fontSize = fontSize + "px";
+  }
+}
+//---------------------------
   // === Render board ===
   function renderBoard(board) {
     currentBoard = board;
@@ -90,6 +101,9 @@ let lastBlurbIndex = -1;
           cell.clicked && cell.image
             ? `<img src="${cell.image}" alt="${cell.text}">`
             : cell.text;
+            if (!cell.clicked) {
+             requestAnimationFrame(() => fitTextToCell(div));
+              }
 
         // clickable always (including center) â€” client confirms mark/unmark
         div.addEventListener("click", () => {
